@@ -14,16 +14,16 @@ from ....api import deps
 
 router = APIRouter()
 
-@router.post("/login/access-token")
+@router.post(
+    "/login/access-token",
+    summary="Get an access token",
+    description="Standard OAuth2 password flow. On success, returns an access token. If MFA is enabled, returns a 202 Accepted with a temporary token."
+)
 def login_access_token(
     response: Response,
     db: Session = Depends(deps.get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ):
-    """
-    OAuth2 compatible token login.
-    Handles password verification and MFA step-up.
-    """
     user = crud.user.get_user_by_email(db, email=form_data.username)
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -57,15 +57,17 @@ def login_access_token(
     }
 
 
-@router.post("/login/mfa", response_model=schemas.Token)
+@router.post(
+    "/login/mfa",
+    response_model=schemas.Token,
+    summary="Verify MFA and get access token",
+    description="After a successful password login for an MFA-enabled user, use the temporary token and a valid OTP code to get a final access token."
+)
 def login_mfa(
     *,
     db: Session = Depends(deps.get_db),
     mfa_in: schemas.MFALogin,
 ):
-    """
-    Verify MFA code and issue final access token.
-    """
     try:
         payload = security.jwt.decode(
             mfa_in.temp_auth_token, security.settings.SECRET_KEY, algorithms=[security.settings.ALGORITHM]
@@ -99,14 +101,14 @@ def login_mfa(
         "token_type": "bearer",
     }
 
-@router.post("/users/", response_model=schemas.User)
+@router.post("/users/", response_model=schemas.User, summary="Create a new user")
 def create_user(
     *,
     db: Session = Depends(deps.get_db),
     user_in: schemas.UserCreate,
 ):
     """
-    Create new user.
+    Create a new user. The first user created will be an **Admin**. Subsequent users will be **Analysts**.
     """
     user = crud.user.get_user_by_email(db, email=user_in.email)
     if user:
@@ -117,21 +119,21 @@ def create_user(
     user = crud.user.create_user(db=db, obj_in=user_in)
     return user
 
-@router.get("/users/me", response_model=schemas.User)
+@router.get("/users/me", response_model=schemas.User, summary="Get current user details")
 def read_users_me(
     current_user: models.User = Depends(deps.get_current_active_user),
 ):
     """
-    Get current user.
+    Fetch the details for the currently authenticated user.
     """
     return current_user
 
-@router.get('/login/google')
+@router.get('/login/google', summary="Redirect to Google for authentication")
 async def login_google(request: Request):
     redirect_uri = request.url_for('auth_google')
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
-@router.get('/auth/google')
+@router.get('/auth/google', include_in_schema=False)
 async def auth_google(request: Request, db: Session = Depends(deps.get_db)):
     try:
         token = await oauth.google.authorize_access_token(request)
