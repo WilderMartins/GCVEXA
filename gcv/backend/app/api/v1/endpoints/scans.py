@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
+from ....services import pdf_service
 
 from .... import crud, models, schemas
 from ....api import deps
@@ -107,3 +109,26 @@ def import_scan_results(
     except Exception as e:
         crud.scan.update_scan_status(db, scan_id=scan.id, status="Import Failed")
         raise HTTPException(status_code=500, detail=f"Failed to import scan results: {e}")
+
+@router.get("/{scan_id}/report", response_class=StreamingResponse)
+def download_scan_report(
+    *,
+    db: Session = Depends(deps.get_db),
+    scan_id: int,
+    current_user: models.User = Depends(deps.get_current_analyst_user),
+):
+    """
+    Download a PDF report for a scan.
+    """
+    scan = crud.scan.get_scan(db, scan_id=scan_id)
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    if scan.status != "Done":
+        raise HTTPException(status_code=400, detail="Report can only be generated for 'Done' scans.")
+
+    pdf_buffer = pdf_service.create_scan_report(scan)
+
+    headers = {
+        'Content-Disposition': f'attachment; filename="gcv_scan_report_{scan.id}.pdf"'
+    }
+    return StreamingResponse(pdf_buffer, media_type="application/pdf", headers=headers)

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from .db.session import engine, SessionLocal
 from .db.base_class import Base
-from .api.v1.endpoints import login, scanner_configs, scans
+from .api.v1.endpoints import login, scanner_configs, scans, dashboard
 from . import crud
 
 def create_initial_data():
@@ -23,6 +23,7 @@ def on_startup():
 app.include_router(login.router, prefix="/api/v1", tags=["Login"])
 app.include_router(scanner_configs.router, prefix="/api/v1/scanners/configs", tags=["Scanner Configurations"])
 app.include_router(scans.router, prefix="/api/v1/scans", tags=["Scans"])
+app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboard"])
 
 @app.get("/")
 def read_root():

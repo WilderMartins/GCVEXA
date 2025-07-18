@@ -38,6 +38,23 @@ const ScanDetailPage = () => {
     }
   };
 
+  const handleDownloadReport = async () => {
+    try {
+      const response = await api.get(`/scans/${scanId}/report`, {
+        responseType: 'blob', // Importante para receber o arquivo
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `gcv_scan_report_${scanId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      alert(`Failed to download report: ${error.response?.data?.detail || 'Error'}`);
+    }
+  };
+
   if (!scan) return <div>Loading...</div>;
 
   return (
@@ -47,6 +64,9 @@ const ScanDetailPage = () => {
       <p><strong>Started:</strong> {new Date(scan.started_at).toLocaleString()}</p>
       <button onClick={handleImportResults} disabled={scan.status !== 'Running'}>
         Import Results
+      </button>
+      <button onClick={handleDownloadReport} disabled={scan.status !== 'Done'} style={{ marginLeft: '1rem' }}>
+        Download PDF Report
       </button>
 
       <hr />
