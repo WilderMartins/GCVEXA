@@ -2,6 +2,47 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 
+const VulnerabilityRow = ({ vuln }) => {
+  const [summary, setSummary] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSummarize = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.post(`/vulnerabilities/${vuln.id}/summarize`);
+      setSummary(response.data.msg);
+    } catch (error) {
+      setSummary(`Error: ${error.response?.data?.detail || 'Could not get summary.'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <tr>
+        <td>{vuln.name}</td>
+        <td>{vuln.severity}</td>
+        <td>{vuln.cvss_score}</td>
+        <td>
+          <button onClick={handleSummarize} disabled={isLoading}>
+            {isLoading ? 'Loading...' : 'Summarize with AI'}
+          </button>
+        </td>
+      </tr>
+      {summary && (
+        <tr>
+          <td colSpan="4" style={{ padding: '1rem', background: '#f8f9fa' }}>
+            <strong>AI Summary:</strong>
+            <div style={{ whiteSpace: 'pre-wrap' }}>{summary}</div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+};
+
+
 const ScanDetailPage = () => {
   const { scanId } = useParams();
   const [scan, setScan] = useState(null);
@@ -19,10 +60,9 @@ const ScanDetailPage = () => {
 
   const fetchScanDetails = async () => {
     try {
-      // No backend, precisaríamos de um endpoint GET /scans/{scan_id} que retorne o scan e suas vulnerabilidades
-      // const response = await api.get(`/scans/${scanId}`);
-      // setScan(response.data);
-      // setVulnerabilities(response.data.vulnerabilities);
+      const response = await api.get(`/scans/${scanId}`);
+      setScan(response.data);
+      setVulnerabilities(response.data.vulnerabilities);
     } catch (error) {
       console.error('Failed to fetch scan details', error);
     }
@@ -32,7 +72,7 @@ const ScanDetailPage = () => {
     try {
       const response = await api.post(`/scans/${scanId}/import`);
       alert(response.data.msg);
-      fetchScanDetails(); // Recarregar os dados
+      fetchScanDetails();
     } catch (error) {
       alert(`Failed to import results: ${error.response?.data?.detail}`);
     }
@@ -40,9 +80,7 @@ const ScanDetailPage = () => {
 
   const handleDownloadReport = async () => {
     try {
-      const response = await api.get(`/scans/${scanId}/report`, {
-        responseType: 'blob', // Importante para receber o arquivo
-      });
+      const response = await api.get(`/scans/${scanId}/report`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -78,15 +116,12 @@ const ScanDetailPage = () => {
             <th>Name</th>
             <th>Severity</th>
             <th>CVSS</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {vulnerabilities.map(vuln => (
-            <tr key={vuln.id}>
-              <td>{vuln.name}</td>
-              <td>{vuln.severity}</td>
-              <td>{vuln.cvss_score}</td>
-            </tr>
+            <VulnerabilityRow key={vuln.id} vuln={vuln} />
           ))}
         </tbody>
       </table>

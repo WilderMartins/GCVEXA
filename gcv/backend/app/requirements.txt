@@ -9,3 +9,4 @@ python-gvm
 reportlab
 pyotp
 qrcode[pil]
+google-generativeai
