@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from .db.session import engine, SessionLocal
 from .db.base_class import Base
-from .api.v1.endpoints import login, scanner_configs, scans, dashboard, mfa, customization, vulnerabilities, setup, playbooks
+from .api.v1.endpoints import login, scanner_configs, scans, dashboard, mfa, customization, vulnerabilities, setup, playbooks, reporting
 from . import crud
+from .core.scheduler import start_scheduler, shutdown_scheduler
 
 def create_initial_data():
     db = SessionLocal()
@@ -19,6 +20,11 @@ app = FastAPI(title="GCV - Sistema de Gestão de Vulnerabilidades")
 def on_startup():
     create_tables()
     create_initial_data()
+    start_scheduler()
+
+@app.on_event("shutdown")
+def on_shutdown():
+    shutdown_scheduler()
 
 app.include_router(login.router, prefix="/api/v1", tags=["Login"])
 app.include_router(scanner_configs.router, prefix="/api/v1/scanners/configs", tags=["Scanner Configurations"])
@@ -29,6 +35,7 @@ app.include_router(customization.router, prefix="/api/v1/customization", tags=["
 app.include_router(vulnerabilities.router, prefix="/api/v1/vulnerabilities", tags=["Vulnerabilities"])
 app.include_router(setup.router, prefix="/api/v1/setup", tags=["Setup"])
 app.include_router(playbooks.router, prefix="/api/v1/playbooks", tags=["Playbooks"])
+app.include_router(reporting.router, prefix="/api/v1/reporting", tags=["Reporting"])
 
 @app.get("/")
 def read_root():
