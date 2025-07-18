@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 
-const VulnerabilityRow = ({ vuln }) => {
+const VulnerabilityRow = ({ vuln, onStatusChange }) => {
   const [summary, setSummary] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(vuln.status);
 
   const handleSummarize = async () => {
     setIsLoading(true);
@@ -18,12 +19,31 @@ const VulnerabilityRow = ({ vuln }) => {
     }
   };
 
+  const handleStatusChange = async (e) => {
+    const newStatus = e.target.value;
+    try {
+      const response = await api.post(`/vulnerabilities/${vuln.id}/status`, { status: newStatus });
+      setCurrentStatus(response.data.status);
+      onStatusChange(vuln.id, response.data); // Notificar o componente pai
+      alert('Status updated!');
+    } catch (error) {
+      alert('Failed to update status.');
+    }
+  };
+
   return (
     <>
       <tr>
         <td>{vuln.name}</td>
         <td>{vuln.severity}</td>
         <td>{vuln.cvss_score}</td>
+        <td>
+          <select value={currentStatus} onChange={handleStatusChange}>
+            <option value="open">Open</option>
+            <option value="remediated">Remediated</option>
+            <option value="false_positive">False Positive</option>
+          </select>
+        </td>
         <td>
           <button onClick={handleSummarize} disabled={isLoading}>
             {isLoading ? 'Loading...' : 'Summarize with AI'}
@@ -32,7 +52,7 @@ const VulnerabilityRow = ({ vuln }) => {
       </tr>
       {summary && (
         <tr>
-          <td colSpan="4" style={{ padding: '1rem', background: '#f8f9fa' }}>
+          <td colSpan="5" style={{ padding: '1rem', background: '#f8f9fa' }}>
             <strong>AI Summary:</strong>
             <div style={{ whiteSpace: 'pre-wrap' }}>{summary}</div>
           </td>
@@ -93,6 +113,10 @@ const ScanDetailPage = () => {
     }
   };
 
+  const handleStatusChange = (vulnId, updatedVuln) => {
+    setVulnerabilities(vulnerabilities.map(v => v.id === vulnId ? updatedVuln : v));
+  };
+
   if (!scan) return <div>Loading...</div>;
 
   return (
@@ -116,12 +140,13 @@ const ScanDetailPage = () => {
             <th>Name</th>
             <th>Severity</th>
             <th>CVSS</th>
-            <th>Actions</th>
+            <th>Status</th>
+            <th>AI Actions</th>
           </tr>
         </thead>
         <tbody>
           {vulnerabilities.map(vuln => (
-            <VulnerabilityRow key={vuln.id} vuln={vuln} />
+            <VulnerabilityRow key={vuln.id} vuln={vuln} onStatusChange={handleStatusChange} />
           ))}
         </tbody>
       </table>
