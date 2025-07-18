@@ -10,6 +10,8 @@ import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 
 import MainLayout from './components/layout/MainLayout';
+import AccountSecurityPage from './pages/AccountSecurityPage';
+import CustomizationPage from './pages/CustomizationPage';
 
 function App() {
   return (
@@ -25,11 +27,15 @@ function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/scans" element={<ScansPage />} />
             <Route path="/scans/:scanId" element={<ScanDetailPage />} />
+            <Route path="/account/security" element={<AccountSecurityPage />} />
           </Route>
 
+import CustomizationPage from './pages/CustomizationPage';
+...
           {/* Rotas de Admin */}
           <Route element={<AdminRoute />}>
             <Route path="/settings/scanners" element={<ScannerConfigsPage />} />
+          <Route path="/settings/customization" element={<CustomizationPage />} />
           </Route>
         </Route>
 

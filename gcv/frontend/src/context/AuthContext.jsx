@@ -18,24 +18,41 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, [token]);
 
-  const login = async (credentials) => {
-    const { data } = await api.post('/login/access-token', new URLSearchParams(credentials));
-    const token = data.access_token;
-    localStorage.setItem('token', token);
-    setToken(token);
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  const fetchUser = async () => {
+    try {
+      const { data } = await api.get('/users/me');
+      setUser(data);
+    } catch (error) {
+      // Token inválido ou expirado, fazer logout
+      logout();
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const decodedToken = JSON.parse(atob(token.split('.')[1]));
-    setUser({ email: decodedToken.sub, roles: decodedToken.roles || [] });
+  const login = async (credentials) => {
+    const response = await api.post('/login/access-token', new URLSearchParams(credentials));
+
+    // Lidar com o fluxo MFA
+    if (response.status === 202) {
+      return response.data; // Retorna { mfa_required: true, temp_auth_token: ... }
+    }
+
+    const { access_token } = response.data;
+    localStorage.setItem('token', access_token);
+    setToken(access_token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+    await fetchUser();
+    return null; // Indica que o login foi direto
   };
 
   useEffect(() => {
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      const decodedToken = JSON.parse(atob(token.split('.')[1]));
-      setUser({ email: decodedToken.sub, roles: decodedToken.roles || [] });
+      fetchUser();
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, [token]);
 
   const signup = async (userData) => {
@@ -49,6 +66,13 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const setTokenAndFetchUser = async (newToken) => {
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+    api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+    await fetchUser();
+  };
+
   const authContextValue = {
     user,
     token,
@@ -56,6 +80,7 @@ export const AuthProvider = ({ children }) => {
     signup,
     logout,
     isAuthenticated: !!token,
+    setTokenAndFetchUser,
   };
 
   return (

@@ -18,8 +18,14 @@ class UserInDBBase(UserBase):
     class Config:
         orm_mode = True
 
+class Role(BaseModel):
+    name: str
+    class Config:
+        orm_mode = True
+
 class User(UserInDBBase):
-    pass
+    mfa_enabled: bool
+    roles: list[Role] = []
 
 class UserInDB(UserInDBBase):
     hashed_password: str

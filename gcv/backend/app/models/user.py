@@ -11,5 +11,8 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean(), default=True)
 
+    mfa_secret = Column(String, nullable=True)
+    mfa_enabled = Column(Boolean(), default=False)
+
     # Relação será adicionada dinamicamente pelo modelo Scan
     # scans = relationship("Scan", back_populates="user")
