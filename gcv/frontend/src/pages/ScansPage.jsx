@@ -5,22 +5,21 @@ import api from '../services/api';
 const ScansPage = () => {
   const [scans, setScans] = useState([]);
   const [showNewScanForm, setShowNewScanForm] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock data
-    setScans([
-      { id: 1, target_host: '192.168.1.1', status: 'Done', started_at: new Date().toISOString() },
-      { id: 2, target_host: 'test.com', status: 'Running', started_at: new Date().toISOString() },
-    ]);
-    // fetchScans();
+    fetchScans();
   }, []);
 
   const fetchScans = async () => {
     try {
+      setLoading(true);
       const response = await api.get('/scans/');
       setScans(response.data);
     } catch (error) {
       console.error('Failed to fetch scans', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,30 +32,32 @@ const ScansPage = () => {
 
       {showNewScanForm && <NewScanForm onSuccess={fetchScans} />}
 
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Target</th>
-            <th>Status</th>
-            <th>Started At</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {scans.map(scan => (
-            <tr key={scan.id}>
-              <td>{scan.id}</td>
-              <td>{scan.target_host}</td>
-              <td>{scan.status}</td>
-              <td>{new Date(scan.started_at).toLocaleString()}</td>
-              <td>
-                <Link to={`/scans/${scan.id}`}>View Details</Link>
-              </td>
+      {loading ? <p>Loading scans...</p> : (
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Target</th>
+              <th>Status</th>
+              <th>Started At</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {scans.map(scan => (
+              <tr key={scan.id}>
+                <td>{scan.id}</td>
+                <td>{scan.target_host}</td>
+                <td>{scan.status}</td>
+                <td>{new Date(scan.started_at).toLocaleString()}</td>
+                <td>
+                  <Link to={`/scans/${scan.id}`}>View Details</Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };
@@ -66,18 +67,31 @@ const NewScanForm = ({ onSuccess }) => {
   const [targetHost, setTargetHost] = useState('');
   const [configId, setConfigId] = useState('');
   const [configs, setConfigs] = useState([]);
+  const [selectedConfigType, setSelectedConfigType] = useState('');
 
   useEffect(() => {
-    // Mock data
-    setConfigs([{ id: 1, name: 'OpenVAS Local' }]);
-    // fetchScannerConfigs();
+    fetchScannerConfigs();
   }, []);
 
   const fetchScannerConfigs = async () => {
-    const response = await api.get('/scanners/configs/');
-    setConfigs(response.data);
-    if (response.data.length > 0) {
-      setConfigId(response.data[0].id);
+    try {
+      const response = await api.get('/scanners/configs/');
+      setConfigs(response.data);
+      if (response.data.length > 0) {
+        setConfigId(response.data[0].id);
+        setSelectedConfigType(response.data[0].type);
+      }
+    } catch (error) {
+      console.error("Failed to fetch scanner configs", error);
+    }
+  };
+
+  const handleConfigChange = (e) => {
+    const newConfigId = e.target.value;
+    setConfigId(newConfigId);
+    const selected = configs.find(c => c.id === parseInt(newConfigId));
+    if (selected) {
+      setSelectedConfigType(selected.type);
     }
   };
 
@@ -93,19 +107,32 @@ const NewScanForm = ({ onSuccess }) => {
     }
   };
 
+  const getPlaceholder = () => {
+    if (selectedConfigType === 'zap') {
+      return 'e.g., https://example.com';
+    }
+    return 'e.g., 192.168.1.1 or test.com';
+  };
+
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} style={{ margin: '1rem 0', padding: '1rem', border: '1px solid #ccc' }}>
       <h3>Start a New Scan</h3>
       <div>
-        <label>Target Host (IP or URL)</label>
-        <input type="text" value={targetHost} onChange={e => setTargetHost(e.target.value)} required />
+        <label>Scanner Configuration</label>
+        <select value={configId} onChange={handleConfigChange} required>
+          <option value="" disabled>Select a configuration</option>
+          {configs.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type})</option>)}
+        </select>
       </div>
       <div>
-        <label>Scanner Configuration</label>
-        <select value={configId} onChange={e => setConfigId(e.target.value)} required>
-          <option value="" disabled>Select a configuration</option>
-          {configs.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <label>Target</label>
+        <input
+          type="text"
+          value={targetHost}
+          onChange={e => setTargetHost(e.target.value)}
+          placeholder={getPlaceholder()}
+          required
+        />
       </div>
       <button type="submit">Start Scan</button>
     </form>

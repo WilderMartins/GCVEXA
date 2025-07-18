@@ -11,3 +11,4 @@ pyotp
 qrcode[pil]
 google-generativeai
 fastapi-mail
+zaproxy

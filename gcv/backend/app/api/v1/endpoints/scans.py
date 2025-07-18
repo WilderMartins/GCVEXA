@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
-from ....services import pdf_service, email_service
+from ....services import pdf_service, email_service, zap_parser
 
 from .... import crud, models, schemas
 from ....api import deps
 from ....services.gvm_service import GVMService
+from ....services.zap_service import ZAPService
 
 router = APIRouter()
 
@@ -18,31 +19,38 @@ def create_scan(
     current_user: models.User = Depends(deps.get_current_analyst_user),
 ):
     """
-    Create new scan. (Analyst or Admin)
+    Create new scan, orchestrating based on scanner type. (Analyst or Admin)
     """
     config = crud.scanner_config.get_config(db, config_id=scan_in.config_id)
     if not config:
         raise HTTPException(status_code=404, detail="Scanner configuration not found")
 
-    # 1. Registrar o scan no nosso DB
     scan = crud.scan.create_scan(db=db, obj_in=scan_in, user=current_user)
 
     try:
-        # 2. Conectar e iniciar o scan no GVM
-        gvm_service = GVMService(config)
-        with gvm_service.connect() as gmp:
-            target_id = gvm_service.find_or_create_target(gmp, host=scan_in.target_host)
-            task_name = f"Scan for {scan_in.target_host} (GCV Scan ID: {scan.id})"
-            task_id = gvm_service.create_scan_task(gmp, name=task_name, target_id=target_id)
+        if config.type == "openvas":
+            gvm_service = GVMService(config)
+            with gvm_service.connect() as gmp:
+                target_id = gvm_service.find_or_create_target(gmp, host=scan_in.target_host)
+                task_name = f"Scan for {scan_in.target_host} (GCV Scan ID: {scan.id})"
+                task_id = gvm_service.create_scan_task(gmp, name=task_name, target_id=target_id)
+            scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Running", gvm_task_id=task_id)
 
-        # 3. Atualizar nosso DB com o ID da tarefa do GVM e o status
-        scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Running", gvm_task_id=task_id)
+        elif config.type == "zap":
+            zap_service = ZAPService(config)
+            task_id = zap_service.start_scan(target_url=scan_in.target_host)
+            # O ZAP Spider + Active Scan pode demorar, então marcamos como "Running".
+            # O ID da tarefa aqui é o ID do Active Scan.
+            scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Running", gvm_task_id=task_id)
+
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported scanner type: {config.type}")
+
         return scan
 
     except Exception as e:
-        # Se algo der errado com o GVM, marcamos nosso scan como falho
         crud.scan.update_scan_status(db, scan_id=scan.id, status="Failed")
-        raise HTTPException(status_code=500, detail=f"Failed to start scan in GVM: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to start scan: {e}")
 
 
 @router.get("/", response_model=List[schemas.Scan])
@@ -86,15 +94,29 @@ async def import_scan_results(
     scan = crud.scan.get_scan(db, scan_id=scan_id)
     if not scan:
         raise HTTPException(status_code=404, detail="Scan not found")
-    if not scan.gvm_task_id:
-        raise HTTPException(status_code=400, detail="Scan has no GVM task ID.")
 
     config = scan.config
-    gvm_service = GVMService(config)
+    vulnerabilities = []
 
     try:
-        with gvm_service.connect() as gmp:
-            vulnerabilities = gvm_service.get_scan_report(gmp, task_id=scan.gvm_task_id)
+        if config.type == "openvas":
+            if not scan.gvm_task_id:
+                raise HTTPException(status_code=400, detail="Scan has no GVM task ID.")
+            gvm_service = GVMService(config)
+            with gvm_service.connect() as gmp:
+                vulnerabilities = gvm_service.get_scan_report(gmp, task_id=scan.gvm_task_id)
+
+        elif config.type == "zap":
+            zap_service = ZAPService(config)
+            # Para o ZAP, o "task_id" é o ID do Active Scan.
+            # Precisamos verificar se o scan está concluído.
+            if zap_service.get_scan_status(scan.gvm_task_id) < 100:
+                 raise HTTPException(status_code=400, detail="ZAP scan is still running.")
+            alerts = zap_service.get_scan_results(target_url=scan.target_host)
+            vulnerabilities = zap_parser.parse_zap_alerts(alerts)
+
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported scanner type for import: {config.type}")
 
         crud.vulnerability.bulk_create_vulnerabilities(
             db, scan_id=scan.id, vulnerabilities_data=vulnerabilities
@@ -102,7 +124,6 @@ async def import_scan_results(
 
         scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Done")
 
-        # Enviar notificação por e-mail
         await email_service.send_scan_completion_email(scan)
 
         return {"msg": f"Successfully imported {len(vulnerabilities)} vulnerabilities. Notification sent."}
