@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: gcv_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=gcv_user
+      - POSTGRES_PASSWORD=gcv_password
+      - POSTGRES_DB=gcv_db
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  backend:
+    build: ./gcv/backend
+    container_name: gcv_backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./gcv/backend/app:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://gcv_user:gcv_password@db/gcv_db
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  frontend:
+    build: ./gcv/frontend
+    container_name: gcv_frontend
+    volumes:
+      - ./gcv/frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
