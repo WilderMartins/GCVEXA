@@ -61,6 +61,14 @@ const AccountSecurityPage = () => {
           </form>
         </div>
       )}
+
+      <hr style={{ margin: '2rem 0' }} />
+
+      <div>
+        <h2>Notification Preferences</h2>
+        <p>You will receive email notifications when your scans are completed.</p>
+        <p>(More detailed notification settings will be available in a future update.)</p>
+      </div>
     </div>
   );
 };

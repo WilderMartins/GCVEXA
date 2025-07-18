@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
-from ....services import pdf_service
+from ....services import pdf_service, email_service
 
 from .... import crud, models, schemas
 from ....api import deps
@@ -74,14 +74,14 @@ def read_scan(
     return scan
 
 @router.post("/{scan_id}/import", response_model=schemas.Msg)
-def import_scan_results(
+async def import_scan_results(
     *,
     db: Session = Depends(deps.get_db),
     scan_id: int,
     current_user: models.User = Depends(deps.get_current_analyst_user),
 ):
     """
-    Import results for a completed scan.
+    Import results for a completed scan and send notification.
     """
     scan = crud.scan.get_scan(db, scan_id=scan_id)
     if not scan:
@@ -94,17 +94,18 @@ def import_scan_results(
 
     try:
         with gvm_service.connect() as gmp:
-            # Aqui estamos assumindo que o scan terminou. Uma implementação mais robusta
-            # verificaria o status da tarefa no GVM antes de tentar importar.
             vulnerabilities = gvm_service.get_scan_report(gmp, task_id=scan.gvm_task_id)
 
         crud.vulnerability.bulk_create_vulnerabilities(
             db, scan_id=scan.id, vulnerabilities_data=vulnerabilities
         )
 
-        crud.scan.update_scan_status(db, scan_id=scan.id, status="Done")
+        scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Done")
 
-        return {"msg": f"Successfully imported {len(vulnerabilities)} vulnerabilities."}
+        # Enviar notificação por e-mail
+        await email_service.send_scan_completion_email(scan)
+
+        return {"msg": f"Successfully imported {len(vulnerabilities)} vulnerabilities. Notification sent."}
 
     except Exception as e:
         crud.scan.update_scan_status(db, scan_id=scan.id, status="Import Failed")

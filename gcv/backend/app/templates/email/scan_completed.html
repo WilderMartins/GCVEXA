@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan Completed</title>
+</head>
+<body>
+    <h2>Scan Completed Successfully</h2>
+    <p>Hello {{ user_name }},</p>
+    <p>
+        Your security scan for target <strong>{{ target }}</strong> has been completed.
+    </p>
+    <ul>
+        <li><strong>Vulnerabilities Found:</strong> {{ vulnerability_count }}</li>
+    </ul>
+    <p>
+        You can view the full report by clicking the link below:
+    </p>
+    <a href="{{ scan_url }}">View Scan Report</a>
+    <br>
+    <p>Thank you for using GCV.</p>
+</body>
+</html>
