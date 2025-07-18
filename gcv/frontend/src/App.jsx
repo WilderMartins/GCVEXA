@@ -12,12 +12,14 @@ import AdminRoute from './components/AdminRoute';
 import MainLayout from './components/layout/MainLayout';
 import AccountSecurityPage from './pages/AccountSecurityPage';
 import CustomizationPage from './pages/CustomizationPage';
+import LoginCallbackPage from './pages/LoginCallbackPage';
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/login/callback" element={<LoginCallbackPage />} />
         <Route path="/signup" element={<SignUpPage />} />
 
         {/* Rotas com Layout Principal */}

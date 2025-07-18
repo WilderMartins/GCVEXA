@@ -4,9 +4,12 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 import pyotp
 
+from fastapi import Request
+from starlette.responses import HTMLResponse, RedirectResponse
 from .... import crud, schemas
 from ....core import security
 from ....core.encryption import decrypt_data
+from ....core.oauth import oauth
 from ....api import deps
 
 router = APIRouter()
@@ -122,3 +125,42 @@ def read_users_me(
     Get current user.
     """
     return current_user
+
+@router.get('/login/google')
+async def login_google(request: Request):
+    redirect_uri = request.url_for('auth_google')
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@router.get('/auth/google')
+async def auth_google(request: Request, db: Session = Depends(deps.get_db)):
+    try:
+        token = await oauth.google.authorize_access_token(request)
+    except Exception as e:
+        return HTMLResponse(f'<h1>Error: {e}</h1>')
+
+    user_info = token.get('userinfo')
+    if not user_info:
+        return HTMLResponse('<h1>Could not retrieve user info.</h1>')
+
+    email = user_info['email']
+    user = crud.user.get_user_by_email(db, email=email)
+
+    if not user:
+        new_user = schemas.UserCreate(
+            email=email,
+            full_name=user_info.get('name', ''),
+            password=security.get_password_hash(pyotp.random_base32()) # Senha aleatória, já que o login é social
+        )
+        user = crud.user.create_user(db, obj_in=new_user)
+
+    access_token_expires = timedelta(minutes=security.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        subject=user.email,
+        expires_delta=access_token_expires,
+        data={"roles": [role.name for role in user.roles]}
+    )
+
+    # Redirecionar para o frontend com o token
+    # Idealmente, a URL base do frontend viria das configurações
+    frontend_url = f"http://localhost:5173/login/callback?token={access_token}"
+    return RedirectResponse(url=frontend_url)

@@ -13,3 +13,4 @@ google-generativeai
 fastapi-mail
 zaproxy
 sonarqube-api-client
+Authlib

@@ -68,7 +68,15 @@ const LoginPage = () => {
     <div>
       <h1>Login</h1>
       {!mfaData ? (
-        <LoginForm onSubmit={handleLogin} />
+        <>
+          <LoginForm onSubmit={handleLogin} />
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <p>OR</p>
+            <a href="http://localhost:8000/api/v1/login/google" className="google-login-button">
+              Login with Google
+            </a>
+          </div>
+        </>
       ) : (
         <MFALoginForm
           tempAuthToken={mfaData.temp_auth_token}
