@@ -111,6 +111,9 @@ const NewScanForm = ({ onSuccess }) => {
     if (selectedConfigType === 'zap') {
       return 'e.g., https://example.com';
     }
+    if (selectedConfigType === 'semgrep') {
+      return 'e.g., https://github.com/user/repo.git';
+    }
     return 'e.g., 192.168.1.1 or test.com';
   };
 

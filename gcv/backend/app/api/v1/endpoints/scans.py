@@ -8,11 +8,13 @@ from .... import crud, models, schemas
 from ....api import deps
 from ....services.gvm_service import GVMService
 from ....services.zap_service import ZAPService
+from ....services.semgrep_service import SemgrepService
+from ....services import semgrep_parser
 
 router = APIRouter()
 
 @router.post("/", response_model=schemas.Scan)
-def create_scan(
+async def create_scan(
     *,
     db: Session = Depends(deps.get_db),
     scan_in: schemas.ScanCreate,
@@ -39,9 +41,21 @@ def create_scan(
         elif config.type == "zap":
             zap_service = ZAPService(config)
             task_id = zap_service.start_scan(target_url=scan_in.target_host)
-            # O ZAP Spider + Active Scan pode demorar, então marcamos como "Running".
-            # O ID da tarefa aqui é o ID do Active Scan.
             scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Running", gvm_task_id=task_id)
+
+        elif config.type == "semgrep":
+            semgrep_service = SemgrepService()
+            try:
+                results_path = semgrep_service.run_scan(repo_url=scan_in.target_host)
+                vulnerabilities = semgrep_parser.parse_semgrep_results(results_path)
+                crud.vulnerability.bulk_create_vulnerabilities(
+                    db, scan_id=scan.id, vulnerabilities_data=vulnerabilities
+                )
+                scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Done")
+                # Enviar notificação por e-mail, pois o scan já foi concluído
+                await email_service.send_scan_completion_email(scan)
+            finally:
+                semgrep_service.cleanup() # Garantir a limpeza
 
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported scanner type: {config.type}")
