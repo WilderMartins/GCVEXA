@@ -9,7 +9,8 @@ from ....api import deps
 from ....services.gvm_service import GVMService
 from ....services.zap_service import ZAPService
 from ....services.semgrep_service import SemgrepService
-from ....services import semgrep_parser
+from ....services.sonarqube_service import SonarQubeService
+from ....services import semgrep_parser, sonarqube_parser
 
 router = APIRouter()
 
@@ -52,10 +53,19 @@ async def create_scan(
                     db, scan_id=scan.id, vulnerabilities_data=vulnerabilities
                 )
                 scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Done")
-                # Enviar notificação por e-mail, pois o scan já foi concluído
                 await email_service.send_scan_completion_email(scan)
             finally:
-                semgrep_service.cleanup() # Garantir a limpeza
+                semgrep_service.cleanup()
+
+        elif config.type == "sonarqube":
+            # O 'target_host' é a URL do repo. O 'project_key' pode ser derivado ou um novo campo.
+            # Por simplicidade, vamos derivá-lo.
+            project_key = scan_in.target_host.split("/")[-1].replace(".git", "") + f"_{scan.id}"
+            sonarqube_service = SonarQubeService(config)
+            sonarqube_service.provision_project_and_run_scan(
+                project_key=project_key, repo_url=scan_in.target_host
+            )
+            scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Running", gvm_task_id=project_key)
 
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported scanner type: {config.type}")
@@ -122,12 +132,16 @@ async def import_scan_results(
 
         elif config.type == "zap":
             zap_service = ZAPService(config)
-            # Para o ZAP, o "task_id" é o ID do Active Scan.
-            # Precisamos verificar se o scan está concluído.
             if zap_service.get_scan_status(scan.gvm_task_id) < 100:
                  raise HTTPException(status_code=400, detail="ZAP scan is still running.")
             alerts = zap_service.get_scan_results(target_url=scan.target_host)
             vulnerabilities = zap_parser.parse_zap_alerts(alerts)
+
+        elif config.type == "sonarqube":
+            sonarqube_service = SonarQubeService(config)
+            # O gvm_task_id aqui é o project_key
+            issues = sonarqube_service.get_scan_results(project_key=scan.gvm_task_id)
+            vulnerabilities = sonarqube_parser.parse_sonarqube_issues(issues)
 
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported scanner type for import: {config.type}")
