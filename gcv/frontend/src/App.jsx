@@ -13,12 +13,17 @@ import MainLayout from './components/layout/MainLayout';
 import AccountSecurityPage from './pages/AccountSecurityPage';
 import CustomizationPage from './pages/CustomizationPage';
 import LoginCallbackPage from './pages/LoginCallbackPage';
+import SetupWizardPage from './pages/SetupWizardPage';
+
+import SetupGuard from './components/SetupGuard';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route element={<SetupGuard />}>
+          <Route path="/setup" element={<SetupWizardPage />} />
+          <Route path="/login" element={<LoginPage />} />
         <Route path="/login/callback" element={<LoginCallbackPage />} />
         <Route path="/signup" element={<SignUpPage />} />
 
@@ -40,7 +45,7 @@ import CustomizationPage from './pages/CustomizationPage';
           <Route path="/settings/customization" element={<CustomizationPage />} />
           </Route>
         </Route>
-
+        </Route>
       </Routes>
     </Router>
   );
