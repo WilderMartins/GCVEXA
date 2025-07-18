@@ -14,3 +14,6 @@ fastapi-mail
 zaproxy
 sonarqube-api-client
 Authlib
+pytest
+pytest-cov
+httpx

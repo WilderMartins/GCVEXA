@@ -2,8 +2,11 @@ from pydantic import BaseSettings
 
 from typing import Optional
 
+import os
+
 class Settings(BaseSettings):
-    DATABASE_URL: str
+    DATABASE_URL: str = "sqlite:///./gcv.db" # Default para SQLite se não estiver no env
+    TEST_DATABASE_URL: str = "sqlite:///./test.db" # Usaremos um arquivo para o DB de teste
     SECRET_KEY: str = "a_very_secret_key"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     ALGORITHM: str = "HS256"
