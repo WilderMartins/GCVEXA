@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 
-const VulnerabilityRow = ({ vuln, onStatusChange }) => {
+const VulnerabilityRow = ({ vuln, onStatusChange, playbooks }) => {
   const [summary, setSummary] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(vuln.status);
+  const [showPlaybookMenu, setShowPlaybookMenu] = useState(false);
 
   const handleSummarize = async () => {
     setIsLoading(true);
@@ -24,10 +25,21 @@ const VulnerabilityRow = ({ vuln, onStatusChange }) => {
     try {
       const response = await api.post(`/vulnerabilities/${vuln.id}/status`, { status: newStatus });
       setCurrentStatus(response.data.status);
-      onStatusChange(vuln.id, response.data); // Notificar o componente pai
+      onStatusChange(vuln.id, response.data);
       alert('Status updated!');
     } catch (error) {
       alert('Failed to update status.');
+    }
+  };
+
+  const handleRunPlaybook = async (playbookId) => {
+    if (!playbookId) return;
+    try {
+      const response = await api.post(`/playbooks/run/${vuln.id}/${playbookId}`);
+      alert(response.data.msg);
+      setShowPlaybookMenu(false);
+    } catch (error) {
+      alert(`Failed to run playbook: ${error.response?.data?.detail}`);
     }
   };
 
@@ -45,9 +57,21 @@ const VulnerabilityRow = ({ vuln, onStatusChange }) => {
           </select>
         </td>
         <td>
-          <button onClick={handleSummarize} disabled={isLoading}>
+          <button onClick={handleSummarize} disabled={isLoading} style={{ marginRight: '10px' }}>
             {isLoading ? 'Loading...' : 'Summarize with AI'}
           </button>
+          <button onClick={() => setShowPlaybookMenu(!showPlaybookMenu)}>
+            Run Playbook
+          </button>
+          {showPlaybookMenu && (
+            <select
+              onChange={(e) => handleRunPlaybook(e.target.value)}
+              defaultValue=""
+            >
+              <option value="" disabled>Select a playbook</option>
+              {playbooks.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          )}
         </td>
       </tr>
       {summary && (
@@ -67,16 +91,27 @@ const ScanDetailPage = () => {
   const { scanId } = useParams();
   const [scan, setScan] = useState(null);
   const [vulnerabilities, setVulnerabilities] = useState([]);
+  const [playbooks, setPlaybooks] = useState([]);
 
   useEffect(() => {
     // Mock data
     setScan({ id: scanId, target_host: '192.168.1.1', status: 'Done', started_at: new Date().toISOString() });
     setVulnerabilities([
-        { id: 1, name: 'SSL Certificate Cannot Be Trusted', severity: 'High', cvss_score: 7.5 },
-        { id: 2, name: 'TCP Timestamps', severity: 'Low', cvss_score: 2.1 },
+        { id: 1, name: 'SSL Certificate Cannot Be Trusted', severity: 'High', cvss_score: 7.5, status: 'open' },
+        { id: 2, name: 'TCP Timestamps', severity: 'Low', cvss_score: 2.1, status: 'open' },
     ]);
+    fetchPlaybooks();
     // fetchScanDetails();
   }, [scanId]);
+
+  const fetchPlaybooks = async () => {
+    try {
+      const response = await api.get('/playbooks/');
+      setPlaybooks(response.data);
+    } catch (error) {
+      console.error("Failed to fetch playbooks", error);
+    }
+  };
 
   const fetchScanDetails = async () => {
     try {
@@ -146,7 +181,7 @@ const ScanDetailPage = () => {
         </thead>
         <tbody>
           {vulnerabilities.map(vuln => (
-            <VulnerabilityRow key={vuln.id} vuln={vuln} onStatusChange={handleStatusChange} />
+            <VulnerabilityRow key={vuln.id} vuln={vuln} onStatusChange={handleStatusChange} playbooks={playbooks} />
           ))}
         </tbody>
       </table>

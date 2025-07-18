@@ -34,6 +34,9 @@ const Navbar = () => {
       {isAdmin && (
         <Link to="/settings/customization" style={{ marginRight: '1rem' }}>Customization</Link>
       )}
+      {isAdmin && (
+        <Link to="/playbooks" style={{ marginRight: '1rem' }}>Playbooks</Link>
+      )}
 
       <div style={{ marginLeft: 'auto' }}>
         <Link to="/account/security" style={{ marginRight: '1rem' }}>

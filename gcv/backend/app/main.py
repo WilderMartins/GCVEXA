@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from .db.session import engine, SessionLocal
 from .db.base_class import Base
-from .api.v1.endpoints import login, scanner_configs, scans, dashboard, mfa, customization, vulnerabilities, setup
+from .api.v1.endpoints import login, scanner_configs, scans, dashboard, mfa, customization, vulnerabilities, setup, playbooks
 from . import crud
 
 def create_initial_data():
@@ -28,6 +28,7 @@ app.include_router(mfa.router, prefix="/api/v1/mfa", tags=["MFA"])
 app.include_router(customization.router, prefix="/api/v1/customization", tags=["Customization"])
 app.include_router(vulnerabilities.router, prefix="/api/v1/vulnerabilities", tags=["Vulnerabilities"])
 app.include_router(setup.router, prefix="/api/v1/setup", tags=["Setup"])
+app.include_router(playbooks.router, prefix="/api/v1/playbooks", tags=["Playbooks"])
 
 @app.get("/")
 def read_root():
