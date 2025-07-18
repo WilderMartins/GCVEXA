@@ -20,11 +20,23 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     const { data } = await api.post('/login/access-token', new URLSearchParams(credentials));
-    localStorage.setItem('token', data.access_token);
-    setToken(data.access_token);
-    api.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
-    // setUser( ... ); // Idealmente, a resposta do login retornaria os dados do usuário
+    const token = data.access_token;
+    localStorage.setItem('token', token);
+    setToken(token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    const decodedToken = JSON.parse(atob(token.split('.')[1]));
+    setUser({ email: decodedToken.sub, roles: decodedToken.roles || [] });
   };
+
+  useEffect(() => {
+    if (token) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      const decodedToken = JSON.parse(atob(token.split('.')[1]));
+      setUser({ email: decodedToken.sub, roles: decodedToken.roles || [] });
+    }
+    setLoading(false);
+  }, [token]);
 
   const signup = async (userData) => {
     await api.post('/users/', userData);

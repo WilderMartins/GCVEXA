@@ -56,6 +56,21 @@ def read_scans(
     scans = crud.scan.get_all_scans(db, skip=skip, limit=limit)
     return scans
 
+@router.get("/{scan_id}", response_model=schemas.Scan)
+def read_scan(
+    *,
+    db: Session = Depends(deps.get_db),
+    scan_id: int,
+    current_user: models.User = Depends(deps.get_current_analyst_user),
+):
+    """
+    Get scan by ID.
+    """
+    scan = crud.scan.get_scan(db, scan_id=scan_id)
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    return scan
+
 @router.post("/{scan_id}/import", response_model=schemas.Msg)
 def import_scan_results(
     *,

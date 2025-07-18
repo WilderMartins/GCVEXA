@@ -20,5 +20,8 @@ class ScanInDBBase(ScanBase):
     class Config:
         orm_mode = True
 
+from .vulnerability import Vulnerability as VulnerabilitySchema
+from typing import List
+
 class Scan(ScanInDBBase):
-    pass
+    vulnerabilities: List[VulnerabilitySchema] = []

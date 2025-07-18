@@ -26,10 +26,14 @@ def login_access_token(
         raise HTTPException(status_code=400, detail="Inactive user")
 
     access_token_expires = timedelta(minutes=security.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        subject=user.email,
+        expires_delta=access_token_expires,
+        # Adicionar dados extras ao token
+        data={"roles": [role.name for role in user.roles]}
+    )
     return {
-        "access_token": security.create_access_token(
-            user.email, expires_delta=access_token_expires
-        ),
+        "access_token": access_token,
         "token_type": "bearer",
     }
 
