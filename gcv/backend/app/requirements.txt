@@ -14,6 +14,7 @@ fastapi-mail
 zaproxy
 sonarqube-api-client
 Authlib
+APScheduler
 pytest
 pytest-cov
 httpx

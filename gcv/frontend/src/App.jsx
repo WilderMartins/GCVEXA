@@ -14,6 +14,8 @@ import AccountSecurityPage from './pages/AccountSecurityPage';
 import CustomizationPage from './pages/CustomizationPage';
 import LoginCallbackPage from './pages/LoginCallbackPage';
 import SetupWizardPage from './pages/SetupWizardPage';
+import PlaybooksPage from './pages/PlaybooksPage';
+import ReportsPage from './pages/ReportsPage';
 
 import SetupGuard from './components/SetupGuard';
 
@@ -43,6 +45,8 @@ import CustomizationPage from './pages/CustomizationPage';
           <Route element={<AdminRoute />}>
             <Route path="/settings/scanners" element={<ScannerConfigsPage />} />
           <Route path="/settings/customization" element={<CustomizationPage />} />
+            <Route path="/playbooks" element={<PlaybooksPage />} />
+            <Route path="/reporting" element={<ReportsPage />} />
           </Route>
         </Route>
         </Route>
