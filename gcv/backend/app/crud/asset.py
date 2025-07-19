@@ -28,3 +28,21 @@ def delete_asset(db: Session, *, asset_id: int):
     db.delete(db_obj)
     db.commit()
     return db_obj
+
+def get_asset_dashboard_stats(db: Session, asset_id: int):
+    """
+    Agrega estatísticas de vulnerabilidade para um único ativo.
+    """
+    from sqlalchemy import func
+    from ..models.vulnerability import VulnerabilityOccurrence, VulnerabilityDefinition
+
+    counts = db.query(VulnerabilityDefinition.severity, func.count(VulnerabilityOccurrence.id)).\
+        join(VulnerabilityDefinition).\
+        filter(VulnerabilityOccurrence.asset_id == asset_id).\
+        group_by(VulnerabilityDefinition.severity).all()
+
+    severity_counts = {severity: count for severity, count in counts}
+
+    # Adicionar outras métricas específicas do ativo aqui...
+
+    return {"vulnerability_counts_by_severity": severity_counts}

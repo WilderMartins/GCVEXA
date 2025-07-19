@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 
 const AssetsPage = () => {
@@ -50,7 +51,9 @@ const AssetsPage = () => {
         <tbody>
           {assets.map(asset => (
             <tr key={asset.id}>
-              <td>{asset.name}</td>
+              <td>
+                <Link to={`/assets/${asset.id}`}>{asset.name}</Link>
+              </td>
               <td>{asset.type}</td>
               <td>{asset.address}</td>
             </tr>

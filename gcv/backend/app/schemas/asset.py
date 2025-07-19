@@ -12,9 +12,14 @@ class AssetCreate(AssetBase):
 class AssetUpdate(AssetBase):
     pass
 
+from typing import Dict
+
 class Asset(AssetBase):
     id: int
     owner_id: int
 
     class Config:
         orm_mode = True
+
+class AssetDashboardStats(BaseModel):
+    vulnerability_counts_by_severity: Dict[str, int]

@@ -144,8 +144,8 @@ async def import_scan_results(
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported scanner type for import: {config.type}")
 
-        crud.vulnerability.bulk_create_vulnerabilities(
-            db, scan_id=scan.id, vulnerabilities_data=vulnerabilities
+        crud.vulnerability.process_vulnerabilities_from_scan(
+            db, scan=scan, vulnerabilities_data=vulnerabilities
         )
 
         scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Done")
