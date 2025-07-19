@@ -18,6 +18,7 @@ import PlaybooksPage from './pages/PlaybooksPage';
 import ReportsPage from './pages/ReportsPage';
 import AssetsPage from './pages/AssetsPage';
 import AssetDetailPage from './pages/AssetDetailPage';
+import VulnerabilityDefinitionPage from './pages/VulnerabilityDefinitionPage';
 
 import SetupGuard from './components/SetupGuard';
 
@@ -40,6 +41,7 @@ function App() {
             <Route path="/assets/:assetId" element={<AssetDetailPage />} />
             <Route path="/scans" element={<ScansPage />} />
             <Route path="/scans/:scanId" element={<ScanDetailPage />} />
+            <Route path="/vulnerabilities/definitions/:definitionId" element={<VulnerabilityDefinitionPage />} />
             <Route path="/account/security" element={<AccountSecurityPage />} />
           </Route>
 

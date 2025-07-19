@@ -26,6 +26,8 @@ def summarize_vulnerability(
 
     return {"msg": summary}
 
+from ....models.vulnerability_event import VulnerabilityEvent
+
 @router.post("/{vulnerability_id}/status", response_model=schemas.Vulnerability)
 def update_vulnerability_status(
     *,
@@ -35,19 +37,26 @@ def update_vulnerability_status(
     current_user: models.User = Depends(deps.get_current_analyst_user),
 ):
     """
-    Update the status of a vulnerability.
+    Update the status of a vulnerability occurrence.
     """
-    vulnerability = db.query(models.Vulnerability).filter(models.Vulnerability.id == vulnerability_id).first()
-    if not vulnerability:
-        raise HTTPException(status_code=404, detail="Vulnerability not found")
+    occurrence = db.query(models.VulnerabilityOccurrence).filter(models.VulnerabilityOccurrence.id == vulnerability_id).first()
+    if not occurrence:
+        raise HTTPException(status_code=404, detail="Vulnerability occurrence not found")
 
-    vulnerability.status = status_in.status
+    occurrence.status = status_in.status
     if status_in.status == "remediated":
-        vulnerability.remediated_at = datetime.datetime.utcnow()
+        occurrence.remediated_at = datetime.datetime.utcnow()
     else:
-        vulnerability.remediated_at = None
+        occurrence.remediated_at = None
 
-    db.add(vulnerability)
+    # Criar evento de mudança de status
+    event = VulnerabilityEvent(
+        occurrence_id=occurrence.id,
+        status_change=f"status set to {status_in.status}",
+        user_id=current_user.id
+    )
+    db.add(occurrence)
+    db.add(event)
     db.commit()
-    db.refresh(vulnerability)
-    return vulnerability
+    db.refresh(occurrence)
+    return occurrence
