@@ -4,7 +4,9 @@ from .user import User
 from .scanner_config import ScannerConfig
 
 class ScanBase(BaseModel):
+
     asset_id: int
+
     config_id: int
 
 class ScanCreate(ScanBase):

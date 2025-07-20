@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
+
 from ....services import pdf_service, email_service, zap_parser, semgrep_parser, sonarqube_parser
+
 from .... import crud, models, schemas
 from ....api import deps
 from ....services.gvm_service import GVMService
@@ -20,11 +22,13 @@ async def create_scan(
     current_user: models.User = Depends(deps.get_current_analyst_user),
 ):
     """
-    Create new scan for a specific asset.
+
+    Create new scan, orchestrating based on scanner type. (Analyst or Admin
     """
     config = crud.scanner_config.get_config(db, config_id=scan_in.config_id)
     if not config:
         raise HTTPException(status_code=404, detail="Scanner configuration not found")
+
 
     asset = crud.asset.get_asset(db, asset_id=scan_in.asset_id)
     if not asset:
@@ -35,35 +39,44 @@ async def create_scan(
     scan = crud.scan.create_scan(db=db, obj_in=scan_in, user=current_user)
     target_address = asset.address
 
+
     try:
         if config.type == "openvas":
             gvm_service = GVMService(config)
             with gvm_service.connect() as gmp:
+
                 target_id = gvm_service.find_or_create_target(gmp, host=target_address)
                 task_name = f"Scan for {target_address} (GCV Scan ID: {scan.id})"
+
                 task_id = gvm_service.create_scan_task(gmp, name=task_name, target_id=target_id)
             scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Running", gvm_task_id=task_id)
 
         elif config.type == "zap":
             zap_service = ZAPService(config)
+
             task_id = zap_service.start_scan(target_url=target_address)
+
             scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Running", gvm_task_id=task_id)
 
         elif config.type == "semgrep":
             semgrep_service = SemgrepService()
             try:
+
                 results_path = semgrep_service.run_scan(repo_url=target_address)
                 vulnerabilities = semgrep_parser.parse_semgrep_results(results_path)
                 crud.vulnerability.bulk_create_vulnerabilities(db, scan_id=scan.id, vulnerabilities_data=vulnerabilities)
+
                 scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Done")
                 await email_service.send_scan_completion_email(scan)
             finally:
                 semgrep_service.cleanup()
 
         elif config.type == "sonarqube":
+
             project_key = target_address.split("/")[-1].replace(".git", "") + f"_{scan.id}"
             sonarqube_service = SonarQubeService(config)
             sonarqube_service.provision_project_and_run_scan(project_key=project_key, repo_url=target_address)
+
             scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Running", gvm_task_id=project_key)
 
         else:
@@ -75,7 +88,9 @@ async def create_scan(
         crud.scan.update_scan_status(db, scan_id=scan.id, status="Failed")
         raise HTTPException(status_code=500, detail=f"Failed to start scan: {e}")
 
+
 # O resto dos endpoints (read_scans, import_scan_results, etc.) permanece aqui...
+
 @router.get("/", response_model=List[schemas.Scan])
 def read_scans(
     db: Session = Depends(deps.get_db),
@@ -133,19 +148,26 @@ async def import_scan_results(
             zap_service = ZAPService(config)
             if zap_service.get_scan_status(scan.gvm_task_id) < 100:
                  raise HTTPException(status_code=400, detail="ZAP scan is still running.")
+
             alerts = zap_service.get_scan_results(target_url=scan.asset.address)
+
             vulnerabilities = zap_parser.parse_zap_alerts(alerts)
 
         elif config.type == "sonarqube":
             sonarqube_service = SonarQubeService(config)
+
+            # O gvm_task_id aqui é o project_key
+
             issues = sonarqube_service.get_scan_results(project_key=scan.gvm_task_id)
             vulnerabilities = sonarqube_parser.parse_sonarqube_issues(issues)
 
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported scanner type for import: {config.type}")
 
+
         crud.vulnerability.process_vulnerabilities_from_scan(
             db, scan=scan, vulnerabilities_data=vulnerabilities
+
         )
 
         scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Done")

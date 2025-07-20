@@ -73,6 +73,18 @@ const NewScanForm = ({ onSuccess }) => {
     }
   };
 
+
+  const getPlaceholder = () => {
+    if (selectedConfigType === 'zap') {
+      return 'e.g., https://example.com';
+    }
+    if (selectedConfigType === 'semgrep' || selectedConfigType === 'sonarqube') {
+      return 'e.g., https://github.com/user/repo.git';
+    }
+    return 'e.g., 192.168.1.1 or test.com';
+  };
+
+
   return (
     <form onSubmit={handleSubmit} style={{ margin: '1rem 0', padding: '1rem', border: '1px solid #ccc' }}>
       <h3>Start a New Scan</h3>
@@ -95,6 +107,7 @@ const NewScanForm = ({ onSuccess }) => {
         </select>
       </div>
       <button type="submit" disabled={!assetId}>Start Scan</button>
+
     </form>
   );
 };

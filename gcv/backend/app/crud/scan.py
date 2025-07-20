@@ -5,7 +5,9 @@ from ..models.user import User
 
 def create_scan(db: Session, *, obj_in: ScanCreate, user: User):
     db_obj = Scan(
+
         asset_id=obj_in.asset_id,
+
         config_id=obj_in.config_id,
         user_id=user.id
     )

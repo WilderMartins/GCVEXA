@@ -26,7 +26,9 @@ def summarize_vulnerability(
 
     return {"msg": summary}
 
+
 from ....models.vulnerability_event import VulnerabilityEvent
+
 
 @router.post("/{vulnerability_id}/status", response_model=schemas.Vulnerability)
 def update_vulnerability_status(
@@ -37,6 +39,7 @@ def update_vulnerability_status(
     current_user: models.User = Depends(deps.get_current_analyst_user),
 ):
     """
+
     Update the status of a vulnerability occurrence.
     """
     occurrence = db.query(models.VulnerabilityOccurrence).filter(models.VulnerabilityOccurrence.id == vulnerability_id).first()
@@ -60,3 +63,4 @@ def update_vulnerability_status(
     db.commit()
     db.refresh(occurrence)
     return occurrence
+
