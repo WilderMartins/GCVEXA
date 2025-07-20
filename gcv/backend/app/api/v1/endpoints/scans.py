@@ -21,6 +21,7 @@ async def create_scan(
 ):
     """
     Create new scan for a specific asset.
+
     """
     config = crud.scanner_config.get_config(db, config_id=scan_in.config_id)
     if not config:
@@ -47,6 +48,7 @@ async def create_scan(
         elif config.type == "zap":
             zap_service = ZAPService(config)
             task_id = zap_service.start_scan(target_url=target_address)
+
             scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Running", gvm_task_id=task_id)
 
         elif config.type == "semgrep":
@@ -55,6 +57,7 @@ async def create_scan(
                 results_path = semgrep_service.run_scan(repo_url=target_address)
                 vulnerabilities = semgrep_parser.parse_semgrep_results(results_path)
                 crud.vulnerability.bulk_create_vulnerabilities(db, scan_id=scan.id, vulnerabilities_data=vulnerabilities)
+
                 scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Done")
                 await email_service.send_scan_completion_email(scan)
             finally:
@@ -64,8 +67,8 @@ async def create_scan(
             project_key = target_address.split("/")[-1].replace(".git", "") + f"_{scan.id}"
             sonarqube_service = SonarQubeService(config)
             sonarqube_service.provision_project_and_run_scan(project_key=project_key, repo_url=target_address)
-            scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Running", gvm_task_id=project_key)
 
+            scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Running", gvm_task_id=project_key)
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported scanner type: {config.type}")
 
@@ -76,6 +79,7 @@ async def create_scan(
         raise HTTPException(status_code=500, detail=f"Failed to start scan: {e}")
 
 # O resto dos endpoints (read_scans, import_scan_results, etc.) permanece aqui...
+
 @router.get("/", response_model=List[schemas.Scan])
 def read_scans(
     db: Session = Depends(deps.get_db),
@@ -138,6 +142,7 @@ async def import_scan_results(
 
         elif config.type == "sonarqube":
             sonarqube_service = SonarQubeService(config)
+
             issues = sonarqube_service.get_scan_results(project_key=scan.gvm_task_id)
             vulnerabilities = sonarqube_parser.parse_sonarqube_issues(issues)
 
@@ -146,6 +151,7 @@ async def import_scan_results(
 
         crud.vulnerability.process_vulnerabilities_from_scan(
             db, scan=scan, vulnerabilities_data=vulnerabilities
+
         )
 
         scan = crud.scan.update_scan_status(db, scan_id=scan.id, status="Done")

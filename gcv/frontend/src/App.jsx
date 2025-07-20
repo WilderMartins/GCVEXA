@@ -19,7 +19,6 @@ import ReportsPage from './pages/ReportsPage';
 import AssetsPage from './pages/AssetsPage';
 import AssetDetailPage from './pages/AssetDetailPage';
 import VulnerabilityDefinitionPage from './pages/VulnerabilityDefinitionPage';
-
 import SetupGuard from './components/SetupGuard';
 
 function App() {

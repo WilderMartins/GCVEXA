@@ -7,6 +7,7 @@ def parse_semgrep_results(file_path: str) -> list:
     try:
         with open(file_path, 'r') as f:
             data = json.load(f)
+
     except (FileNotFoundError, json.JSONDecodeError):
         return []
 

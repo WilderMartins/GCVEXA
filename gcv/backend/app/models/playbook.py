@@ -37,6 +37,7 @@ class PlaybookExecution(Base):
     completed_at = Column(DateTime, nullable=True)
 
     playbook_id = Column(Integer, ForeignKey("playbooks.id"))
+
     vulnerability_id = Column(Integer, ForeignKey("vulnerability_occurrences.id"))
 
     playbook = relationship("Playbook")
