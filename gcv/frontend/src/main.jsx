@@ -4,7 +4,7 @@ import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext'
 import { CustomizationProvider } from './context/CustomizationContext'
-import { SetupProvider } from './components/SetupGuard'
+import { SetupProvider } from './context/SetupContext'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -19,6 +19,4 @@ EXPOSE 8000
 # O comando para iniciar a aplicação é definido no docker-compose.yml,
 # mas ter um CMD padrão é uma boa prática.
 # Uvicorn será executado a partir de /app, então ele encontrará 'app.main'.
-
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
