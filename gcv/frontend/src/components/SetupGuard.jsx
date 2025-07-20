@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useLocation, Navigate, Outlet } from 'react-router-dom';
 import api from '../services/api';
@@ -20,7 +21,6 @@ export const SetupProvider = ({ children }) => {
     };
     checkSetupStatus();
   }, []);
-
   return (
     <SetupContext.Provider value={needsSetup}>
       {children}
@@ -31,7 +31,6 @@ export const SetupProvider = ({ children }) => {
 export const useSetup = () => {
   return useContext(SetupContext);
 };
-
 
 const SetupGuard = () => {
   const needsSetup = useSetup();
