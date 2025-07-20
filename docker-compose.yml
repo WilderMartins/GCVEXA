@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   zap:
-    image: owasp/zap2docker-stable
+    image: softwaresecurityproject/zap-stable
     container_name: gcv_zap
     command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.key=gcv_zap_api_key -config api.disablekey=false
     ports:
