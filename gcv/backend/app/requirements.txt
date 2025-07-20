@@ -12,7 +12,7 @@ qrcode[pil]
 google-generativeai
 fastapi-mail
 zaproxy
-sonarqube-api-client
+python-sonarqube-api
 Authlib
 APScheduler
 pytest
