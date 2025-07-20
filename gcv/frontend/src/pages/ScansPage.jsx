@@ -3,86 +3,53 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 
 const ScansPage = () => {
-  const [scans, setScans] = useState([]);
-  const [showNewScanForm, setShowNewScanForm] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchScans();
-  }, []);
-
-  const fetchScans = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/scans/');
-      setScans(response.data);
-    } catch (error) {
-      console.error('Failed to fetch scans', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div>
-      <h1>Scans</h1>
-      <button onClick={() => setShowNewScanForm(!showNewScanForm)}>
-        {showNewScanForm ? 'Cancel' : 'New Scan'}
-      </button>
-
-      {showNewScanForm && <NewScanForm onSuccess={fetchScans} />}
-
-      {loading ? <p>Loading scans...</p> : (
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Target</th>
-              <th>Status</th>
-              <th>Started At</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {scans.map(scan => (
-              <tr key={scan.id}>
-                <td>{scan.id}</td>
-                <td>{scan.target_host}</td>
-                <td>{scan.status}</td>
-                <td>{new Date(scan.started_at).toLocaleString()}</td>
-                <td>
-                  <Link to={`/scans/${scan.id}`}>View Details</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
+  // ... (código existente da ScansPage) ...
 };
 
-// Componente do formulário de novo scan
+// Formulário de novo scan refatorado
 const NewScanForm = ({ onSuccess }) => {
-  const [targetHost, setTargetHost] = useState('');
+  const [assetId, setAssetId] = useState('');
   const [configId, setConfigId] = useState('');
   const [configs, setConfigs] = useState([]);
+  const [assets, setAssets] = useState([]);
+  const [filteredAssets, setFilteredAssets] = useState([]);
   const [selectedConfigType, setSelectedConfigType] = useState('');
 
   useEffect(() => {
-    fetchScannerConfigs();
+    const fetchData = async () => {
+      try {
+        const [configsRes, assetsRes] = await Promise.all([
+          api.get('/scanners/configs/'),
+          api.get('/assets/')
+        ]);
+        setConfigs(configsRes.data);
+        setAssets(assetsRes.data);
+        if (configsRes.data.length > 0) {
+          const firstConfig = configsRes.data[0];
+          setConfigId(firstConfig.id);
+          updateFilteredAssets(firstConfig.type, assetsRes.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch data for new scan form", error);
+      }
+    };
+    fetchData();
   }, []);
 
-  const fetchScannerConfigs = async () => {
-    try {
-      const response = await api.get('/scanners/configs/');
-      setConfigs(response.data);
-      if (response.data.length > 0) {
-        setConfigId(response.data[0].id);
-        setSelectedConfigType(response.data[0].type);
-      }
-    } catch (error) {
-      console.error("Failed to fetch scanner configs", error);
+  const updateFilteredAssets = (configType, allAssets) => {
+    let compatibleTypes = [];
+    if (configType === 'openvas' || configType === 'zap') {
+      compatibleTypes = ['host', 'application'];
+    } else if (configType === 'semgrep' || configType === 'sonarqube') {
+      compatibleTypes = ['repository'];
+    }
+    const filtered = allAssets.filter(asset => compatibleTypes.includes(asset.type));
+    setFilteredAssets(filtered);
+    setSelectedConfigType(configType);
+    if (filtered.length > 0) {
+      setAssetId(filtered[0].id);
+    } else {
+      setAssetId('');
     }
   };
 
@@ -91,21 +58,21 @@ const NewScanForm = ({ onSuccess }) => {
     setConfigId(newConfigId);
     const selected = configs.find(c => c.id === parseInt(newConfigId));
     if (selected) {
-      setSelectedConfigType(selected.type);
+      updateFilteredAssets(selected.type, assets);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/scans/', { target_host: targetHost, config_id: parseInt(configId) });
+      await api.post('/scans/', { asset_id: parseInt(assetId), config_id: parseInt(configId) });
       alert('Scan started successfully!');
-      setTargetHost('');
       onSuccess();
     } catch (error) {
       alert(`Failed to start scan: ${error.response?.data?.detail}`);
     }
   };
+
 
   const getPlaceholder = () => {
     if (selectedConfigType === 'zap') {
@@ -116,6 +83,7 @@ const NewScanForm = ({ onSuccess }) => {
     }
     return 'e.g., 192.168.1.1 or test.com';
   };
+
 
   return (
     <form onSubmit={handleSubmit} style={{ margin: '1rem 0', padding: '1rem', border: '1px solid #ccc' }}>
@@ -128,18 +96,83 @@ const NewScanForm = ({ onSuccess }) => {
         </select>
       </div>
       <div>
-        <label>Target</label>
-        <input
-          type="text"
-          value={targetHost}
-          onChange={e => setTargetHost(e.target.value)}
-          placeholder={getPlaceholder()}
-          required
-        />
+        <label>Asset to Scan</label>
+        <select value={assetId} onChange={e => setAssetId(e.target.value)} required>
+          <option value="" disabled>Select an asset</option>
+          {filteredAssets.length > 0 ? (
+            filteredAssets.map(a => <option key={a.id} value={a.id}>{a.name} ({a.address})</option>)
+          ) : (
+            <option disabled>No compatible assets for this scanner type</option>
+          )}
+        </select>
       </div>
-      <button type="submit">Start Scan</button>
+      <button type="submit" disabled={!assetId}>Start Scan</button>
+
     </form>
   );
 };
 
-export default ScansPage;
+// A ScansPage precisa ser mantida, apenas o NewScanForm é totalmente substituído.
+// Vou colar o corpo da ScansPage aqui para garantir.
+
+const FullScansPage = () => {
+    const [scans, setScans] = useState([]);
+    const [showNewScanForm, setShowNewScanForm] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      fetchScans();
+    }, []);
+
+    const fetchScans = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/scans/');
+        setScans(response.data);
+      } catch (error) {
+        console.error('Failed to fetch scans', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    return (
+      <div>
+        <h1>Scans</h1>
+        <button onClick={() => setShowNewScanForm(!showNewScanForm)}>
+          {showNewScanForm ? 'Cancel' : 'New Scan'}
+        </button>
+
+        {showNewScanForm && <NewScanForm onSuccess={fetchScans} />}
+
+        {loading ? <p>Loading scans...</p> : (
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Asset</th>
+                <th>Status</th>
+                <th>Started At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {scans.map(scan => (
+                <tr key={scan.id}>
+                  <td>{scan.id}</td>
+                  <td>{scan.asset.name}</td>
+                  <td>{scan.status}</td>
+                  <td>{new Date(scan.started_at).toLocaleString()}</td>
+                  <td>
+                    <Link to={`/scans/${scan.id}`}>View Details</Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    );
+};
+
+export default FullScansPage;

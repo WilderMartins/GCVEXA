@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 
@@ -8,10 +9,13 @@ const VulnerabilityRow = ({ vuln, onStatusChange, playbooks }) => {
   const [currentStatus, setCurrentStatus] = useState(vuln.status);
   const [showPlaybookMenu, setShowPlaybookMenu] = useState(false);
 
+
   const handleSummarize = async () => {
     setIsLoading(true);
     try {
+
       const response = await api.post(`/vulnerabilities/${vuln.id}/summarize`);
+
       setSummary(response.data.msg);
     } catch (error) {
       setSummary(`Error: ${error.response?.data?.detail || 'Could not get summary.'}`);
@@ -23,9 +27,11 @@ const VulnerabilityRow = ({ vuln, onStatusChange, playbooks }) => {
   const handleStatusChange = async (e) => {
     const newStatus = e.target.value;
     try {
+
       const response = await api.post(`/vulnerabilities/${vuln.id}/status`, { status: newStatus });
       setCurrentStatus(response.data.status);
       onStatusChange(vuln.id, response.data);
+
       alert('Status updated!');
     } catch (error) {
       alert('Failed to update status.');
@@ -35,9 +41,11 @@ const VulnerabilityRow = ({ vuln, onStatusChange, playbooks }) => {
   const handleRunPlaybook = async (playbookId) => {
     if (!playbookId) return;
     try {
+
       const response = await api.post(`/playbooks/run/${vuln.id}/${playbookId}`);
       alert(response.data.msg);
       setShowPlaybookMenu(false);
+
     } catch (error) {
       alert(`Failed to run playbook: ${error.response?.data?.detail}`);
     }
@@ -46,6 +54,7 @@ const VulnerabilityRow = ({ vuln, onStatusChange, playbooks }) => {
   return (
     <>
       <tr>
+
         <td>{vuln.name}</td>
         <td>{vuln.severity}</td>
         <td>{vuln.cvss_score}</td>
@@ -90,6 +99,7 @@ const VulnerabilityRow = ({ vuln, onStatusChange, playbooks }) => {
 const ScanDetailPage = () => {
   const { scanId } = useParams();
   const [scan, setScan] = useState(null);
+
   const [vulnerabilities, setVulnerabilities] = useState([]);
   const [playbooks, setPlaybooks] = useState([]);
 

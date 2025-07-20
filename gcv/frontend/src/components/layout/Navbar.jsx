@@ -27,6 +27,9 @@ const Navbar = () => {
       <span style={{ fontWeight: 'bold', marginRight: '2rem' }}>{customization.app_title}</span>
 
       <Link to="/" style={{ marginRight: '1rem' }}>Dashboard</Link>
+
+      <Link to="/assets" style={{ marginRight: '1rem' }}>Assets</Link>
+
       <Link to="/scans" style={{ marginRight: '1rem' }}>Scans</Link>
       {isAdmin && (
         <Link to="/settings/scanners" style={{ marginRight: '1rem' }}>Settings</Link>
