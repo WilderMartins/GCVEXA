@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { useLocation, Navigate, Outlet } from 'react-router-dom';
 import { useSetup } from '../context/SetupContext';
 
-const SetupGuard = () => {
+export const SetupGuard = () => {
   const needsSetup = useSetup();
   const location = useLocation();
 
@@ -21,5 +20,3 @@ const SetupGuard = () => {
 
   return <Outlet />;
 };
-
-export default SetupGuard;

@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 // Guards e Layouts
-import SetupGuard from './components/SetupGuard';
+import { SetupGuard } from './components/SetupGuard';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import MainLayout from './components/layout/MainLayout';
