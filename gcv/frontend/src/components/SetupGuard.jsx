@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useLocation, Navigate, Outlet } from 'react-router-dom';
 import api from '../services/api';
 
-const SetupGuard = () => {
-  const [needsSetup, setNeedsSetup] = useState(null);
-  const location = useLocation();
+// Usar um Context para evitar chamadas repetidas da API
+const SetupContext = createContext(null);
+
+export const SetupProvider = ({ children }) => {
+  const [needsSetup, setNeedsSetup] = useState(null); // null = não verificado, true/false = verificado
 
   useEffect(() => {
     const checkSetupStatus = async () => {
@@ -12,30 +15,38 @@ const SetupGuard = () => {
         const { data } = await api.get('/setup/status');
         setNeedsSetup(data.needs_setup);
       } catch (error) {
-        // Se a API falhar, assumimos que algo está errado e não bloqueamos a UI
-        console.error("Could not verify setup status.", error);
+        console.error("Could not verify setup status. Assuming setup is complete.", error);
         setNeedsSetup(false);
       }
     };
     checkSetupStatus();
   }, []);
+  return (
+    <SetupContext.Provider value={needsSetup}>
+      {children}
+    </SetupContext.Provider>
+  );
+};
+
+export const useSetup = () => {
+  return useContext(SetupContext);
+};
+
+const SetupGuard = () => {
+  const needsSetup = useSetup();
+  const location = useLocation();
 
   if (needsSetup === null) {
-    return <div>Loading configuration...</div>; // Ou um spinner
+    return <div>Loading application configuration...</div>;
   }
 
   if (needsSetup && location.pathname !== '/setup') {
-    // Se o setup é necessário e não estamos na página de setup, redireciona
     return <Navigate to="/setup" replace />;
   }
 
   if (!needsSetup && location.pathname === '/setup') {
-    // Se o setup não é necessário mas estamos na página de setup, redireciona para o login
     return <Navigate to="/login" replace />;
   }
 
-  // Se tudo estiver ok, renderiza a rota filha
   return <Outlet />;
 };
-
-export default SetupGuard;

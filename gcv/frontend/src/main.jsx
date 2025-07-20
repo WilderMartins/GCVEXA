@@ -4,13 +4,16 @@ import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext'
 import { CustomizationProvider } from './context/CustomizationContext'
+import { SetupProvider } from './components/SetupGuard'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <CustomizationProvider>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </CustomizationProvider>
+    <SetupProvider>
+      <CustomizationProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </CustomizationProvider>
+    </SetupProvider>
   </StrictMode>,
 )
