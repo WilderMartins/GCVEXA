@@ -12,7 +12,4 @@ class Role(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
     description = Column(String)
-
-# Adicionar a relação no modelo User
-from .user import User
-User.roles = relationship("Role", secondary=user_roles, backref="users")
+    users = relationship("User", secondary=user_roles, back_populates="roles")

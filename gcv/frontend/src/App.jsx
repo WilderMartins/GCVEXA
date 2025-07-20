@@ -19,8 +19,6 @@ import ReportsPage from './pages/ReportsPage';
 import AssetsPage from './pages/AssetsPage';
 import AssetDetailPage from './pages/AssetDetailPage';
 import VulnerabilityDefinitionPage from './pages/VulnerabilityDefinitionPage';
-
-
 import SetupGuard from './components/SetupGuard';
 
 function App() {
@@ -38,13 +36,11 @@ function App() {
           {/* Rotas Protegidas */}
           <Route element={<PrivateRoute />}>
             <Route path="/" element={<DashboardPage />} />
-
             <Route path="/assets" element={<AssetsPage />} />
             <Route path="/assets/:assetId" element={<AssetDetailPage />} />
             <Route path="/scans" element={<ScansPage />} />
             <Route path="/scans/:scanId" element={<ScanDetailPage />} />
             <Route path="/vulnerabilities/definitions/:definitionId" element={<VulnerabilityDefinitionPage />} />
-
             <Route path="/account/security" element={<AccountSecurityPage />} />
           </Route>
 

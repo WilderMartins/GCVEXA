@@ -49,6 +49,6 @@ class PlaybookExecution(BaseModel):
     id: int
     status: str
     playbook_id: int
-    vulnerability_id: int
+    vulnerability_occurrence_id: int
     class Config:
         orm_mode = True

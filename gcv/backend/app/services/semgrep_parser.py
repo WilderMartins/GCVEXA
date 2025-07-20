@@ -8,31 +8,23 @@ def parse_semgrep_results(file_path: str) -> list:
         with open(file_path, 'r') as f:
             data = json.load(f)
 
-    except FileNotFoundError:
-        print(f"Arquivo de resultados não encontrado em: {file_path}")
-        return []
-    except json.JSONDecodeError:
-        print(f"Erro ao decodificar o JSON do arquivo: {file_path}")
-
+    except (FileNotFoundError, json.JSONDecodeError):
         return []
 
     vulnerabilities = []
     for result in data.get("results", []):
-
-        check = result.get("check_id", "N/A")
-
+        check_id = result.get("check_id", "N/A")
         path = result.get("path", "N/A")
         line = result.get("start", {}).get("line", "N/A")
 
         vuln_data = {
-
-            "name": f"{check} in {path}",
+            "name": f"{check_id} in {path}",
             "severity": map_severity(result.get("extra", {}).get("severity", "INFO")),
-            "cvss_score": 0.0, # Semgrep não fornece CVSS
             "description": result.get("extra", {}).get("message", "No description provided."),
-            "host": path, # Usamos o campo 'host' para o caminho do arquivo
-            "port": str(line), # Usamos o campo 'port' para a linha
-
+            "host": path,
+            "port": str(line),
+            # Usar o ID da regra como a parte principal da assinatura para correlação
+            "signature_id": check_id
         }
         vulnerabilities.append(vuln_data)
 

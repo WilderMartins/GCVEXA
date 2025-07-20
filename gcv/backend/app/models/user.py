@@ -14,5 +14,8 @@ class User(Base):
     mfa_secret = Column(String, nullable=True)
     mfa_enabled = Column(Boolean(), default=False)
 
-    # Relação será adicionada dinamicamente pelo modelo Scan
-    # scans = relationship("Scan", back_populates="user")
+    # Relações centralizadas
+    assets = relationship("Asset", back_populates="owner", cascade="all, delete-orphan")
+    scans = relationship("Scan", back_populates="user", cascade="all, delete-orphan")
+    events = relationship("VulnerabilityEvent", back_populates="user")
+    roles = relationship("Role", secondary="user_roles", back_populates="users")

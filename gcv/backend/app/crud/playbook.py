@@ -28,5 +28,11 @@ def create_playbook(db: Session, *, obj_in: schemas.PlaybookCreate) -> models.Pl
 def get_playbook(db: Session, playbook_id: int) -> models.Playbook:
     return db.query(models.Playbook).filter(models.Playbook.id == playbook_id).first()
 
+from sqlalchemy.orm import selectinload
+
 def get_all_playbooks(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Playbook).offset(skip).limit(limit).all()
+    return db.query(models.Playbook).\
+        options(
+            selectinload(models.Playbook.steps).selectinload(models.PlaybookStep.action_config)
+        ).\
+        offset(skip).limit(limit).all()

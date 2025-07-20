@@ -1,35 +1,25 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import useFetchData from '../hooks/useFetchData';
 
 const AssetsPage = () => {
-  const [assets, setAssets] = useState([]);
+  const { data: assets, loading, error, refetch } = useFetchData('/assets/');
   const [showForm, setShowForm] = useState(false);
-
-  useEffect(() => {
-    fetchAssets();
-  }, []);
-
-  const fetchAssets = async () => {
-    try {
-      const response = await api.get('/assets/');
-      setAssets(response.data);
-    } catch (error) {
-      console.error('Failed to fetch assets', error);
-    }
-  };
-
   const handleCreate = async (assetData) => {
     try {
       await api.post('/assets/', assetData);
       alert('Asset created successfully!');
       setShowForm(false);
-      fetchAssets();
+      refetch();
     } catch (error) {
       alert(`Failed to create asset: ${error.response?.data?.detail}`);
     }
   };
 
+  if (loading) return <p>Loading assets...</p>;
+  if (error) return <p style={{color: 'red'}}>Failed to load assets.</p>;
   return (
     <div>
       <h1>My Assets</h1>
@@ -49,7 +39,7 @@ const AssetsPage = () => {
           </tr>
         </thead>
         <tbody>
-          {assets.map(asset => (
+          {assets && assets.map(asset => (
             <tr key={asset.id}>
               <td>
                 <Link to={`/assets/${asset.id}`}>{asset.name}</Link>
@@ -64,7 +54,7 @@ const AssetsPage = () => {
   );
 };
 
-// Formulário para criar um novo ativo
+// O componente NewAssetForm permanece o mesmo
 const NewAssetForm = ({ onSubmit }) => {
   const [name, setName] = useState('');
   const [type, setType] = useState('host');
@@ -98,5 +88,4 @@ const NewAssetForm = ({ onSubmit }) => {
     </form>
   );
 };
-
 export default AssetsPage;

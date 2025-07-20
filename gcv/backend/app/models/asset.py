@@ -12,8 +12,4 @@ class Asset(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="assets")
 
-    scans = relationship("Scan", back_populates="asset")
-
-# Adicionar a relação inversa no modelo User
-from .user import User
-User.assets = relationship("Asset", order_by=Asset.id, back_populates="owner")
+    scans = relationship("Scan", back_populates="asset", cascade="all, delete-orphan")

@@ -1,40 +1,74 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import useFetchData from '../hooks/useFetchData';
 
 const ScansPage = () => {
-  // ... (código existente da ScansPage) ...
+  const { data: scans, loading, error, refetch } = useFetchData('/scans/');
+  const [showNewScanForm, setShowNewScanForm] = useState(false);
+
+  if (loading) return <p>Loading scans...</p>;
+  if (error) return <p style={{ color: 'red' }}>Failed to load scans.</p>;
+
+  return (
+    <div>
+      <h1>Scans</h1>
+      <button onClick={() => setShowNewScanForm(!showNewScanForm)}>
+        {showNewScanForm ? 'Cancel' : 'New Scan'}
+      </button>
+
+      {showNewScanForm && <NewScanForm onSuccess={refetch} />}
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Asset</th>
+            <th>Status</th>
+            <th>Started At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {scans && scans.map(scan => (
+            <tr key={scan.id}>
+              <td>{scan.id}</td>
+              <td>{scan.asset.name}</td>
+              <td>{scan.status}</td>
+              <td>{new Date(scan.started_at).toLocaleString()}</td>
+              <td>
+                <Link to={`/scans/${scan.id}`}>View Details</Link>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 };
 
-// Formulário de novo scan refatorado
+// O componente NewScanForm permanece o mesmo.
 const NewScanForm = ({ onSuccess }) => {
   const [assetId, setAssetId] = useState('');
   const [configId, setConfigId] = useState('');
-  const [configs, setConfigs] = useState([]);
-  const [assets, setAssets] = useState([]);
+  const { data: configs, loading: loadingConfigs } = useFetchData('/scanners/configs/');
+  const { data: assets, loading: loadingAssets } = useFetchData('/assets/');
   const [filteredAssets, setFilteredAssets] = useState([]);
-  const [selectedConfigType, setSelectedConfigType] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [configsRes, assetsRes] = await Promise.all([
-          api.get('/scanners/configs/'),
-          api.get('/assets/')
-        ]);
-        setConfigs(configsRes.data);
-        setAssets(assetsRes.data);
-        if (configsRes.data.length > 0) {
-          const firstConfig = configsRes.data[0];
-          setConfigId(firstConfig.id);
-          updateFilteredAssets(firstConfig.type, assetsRes.data);
+    if (configs && configs.length > 0 && assets) {
+      if (!configId) {
+        const firstConfig = configs[0];
+        setConfigId(firstConfig.id);
+        updateFilteredAssets(firstConfig.type, assets);
+      } else {
+        const currentConfig = configs.find(c => c.id === parseInt(configId));
+        if (currentConfig) {
+          updateFilteredAssets(currentConfig.type, assets);
         }
-      } catch (error) {
-        console.error("Failed to fetch data for new scan form", error);
       }
-    };
-    fetchData();
-  }, []);
+    }
+  }, [configs, assets, configId]);
 
   const updateFilteredAssets = (configType, allAssets) => {
     let compatibleTypes = [];
@@ -45,21 +79,15 @@ const NewScanForm = ({ onSuccess }) => {
     }
     const filtered = allAssets.filter(asset => compatibleTypes.includes(asset.type));
     setFilteredAssets(filtered);
-    setSelectedConfigType(configType);
-    if (filtered.length > 0) {
+    if (filtered.length > 0 && !filtered.some(a => a.id === parseInt(assetId))) {
       setAssetId(filtered[0].id);
-    } else {
+    } else if (filtered.length === 0) {
       setAssetId('');
     }
   };
 
   const handleConfigChange = (e) => {
-    const newConfigId = e.target.value;
-    setConfigId(newConfigId);
-    const selected = configs.find(c => c.id === parseInt(newConfigId));
-    if (selected) {
-      updateFilteredAssets(selected.type, assets);
-    }
+    setConfigId(e.target.value);
   };
 
   const handleSubmit = async (e) => {
@@ -73,17 +101,7 @@ const NewScanForm = ({ onSuccess }) => {
     }
   };
 
-
-  const getPlaceholder = () => {
-    if (selectedConfigType === 'zap') {
-      return 'e.g., https://example.com';
-    }
-    if (selectedConfigType === 'semgrep' || selectedConfigType === 'sonarqube') {
-      return 'e.g., https://github.com/user/repo.git';
-    }
-    return 'e.g., 192.168.1.1 or test.com';
-  };
-
+  if (loadingConfigs || loadingAssets) return <p>Loading form...</p>;
 
   return (
     <form onSubmit={handleSubmit} style={{ margin: '1rem 0', padding: '1rem', border: '1px solid #ccc' }}>
@@ -92,7 +110,7 @@ const NewScanForm = ({ onSuccess }) => {
         <label>Scanner Configuration</label>
         <select value={configId} onChange={handleConfigChange} required>
           <option value="" disabled>Select a configuration</option>
-          {configs.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type})</option>)}
+          {configs && configs.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type})</option>)}
         </select>
       </div>
       <div>
@@ -107,72 +125,8 @@ const NewScanForm = ({ onSuccess }) => {
         </select>
       </div>
       <button type="submit" disabled={!assetId}>Start Scan</button>
-
     </form>
   );
 };
 
-// A ScansPage precisa ser mantida, apenas o NewScanForm é totalmente substituído.
-// Vou colar o corpo da ScansPage aqui para garantir.
-
-const FullScansPage = () => {
-    const [scans, setScans] = useState([]);
-    const [showNewScanForm, setShowNewScanForm] = useState(false);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-      fetchScans();
-    }, []);
-
-    const fetchScans = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/scans/');
-        setScans(response.data);
-      } catch (error) {
-        console.error('Failed to fetch scans', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <div>
-        <h1>Scans</h1>
-        <button onClick={() => setShowNewScanForm(!showNewScanForm)}>
-          {showNewScanForm ? 'Cancel' : 'New Scan'}
-        </button>
-
-        {showNewScanForm && <NewScanForm onSuccess={fetchScans} />}
-
-        {loading ? <p>Loading scans...</p> : (
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Asset</th>
-                <th>Status</th>
-                <th>Started At</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scans.map(scan => (
-                <tr key={scan.id}>
-                  <td>{scan.id}</td>
-                  <td>{scan.asset.name}</td>
-                  <td>{scan.status}</td>
-                  <td>{new Date(scan.started_at).toLocaleString()}</td>
-                  <td>
-                    <Link to={`/scans/${scan.id}`}>View Details</Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    );
-};
-
-export default FullScansPage;
+export default ScansPage;
