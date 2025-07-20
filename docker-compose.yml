@@ -1,0 +1,89 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: gcv_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=gcv_user
+      - POSTGRES_PASSWORD=gcv_password
+      - POSTGRES_DB=gcv_db
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  backend:
+    build: ./gcv/backend
+    container_name: gcv_backend
+    working_dir: /app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./gcv/backend/app:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://gcv_user:gcv_password@db/gcv_db
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  frontend:
+    build: ./gcv/frontend
+    container_name: gcv_frontend
+    volumes:
+      - ./gcv/frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  zap:
+    image: softwaresecurityproject/zap-stable
+    container_name: gcv_zap
+    command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.key=gcv_zap_api_key -config api.disablekey=false
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  postgres_sonar:
+    image: postgres:11-alpine
+    container_name: gcv_postgres_sonar
+    volumes:
+      - sonarqube_db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonarqube
+    restart: unless-stopped
+
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: gcv_sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - sonar.jdbc.username=sonar
+      - sonar.jdbc.password=sonar
+      - sonar.jdbc.url=jdbc:postgresql://postgres_sonar:5432/sonarqube
+    volumes:
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    depends_on:
+      - postgres_sonar
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  sonarqube_db:
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
