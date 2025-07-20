@@ -4,7 +4,6 @@
 
 O **Sistema de Gestão de Vulnerabilidades (GCV)** é uma plataforma SaaS projetada para agregar, orquestrar e remediar vulnerabilidades de segurança de forma centralizada e inteligente. O sistema se integra a uma variedade de scanners de segurança (Infraestrutura, DAST, SAST) para consolidar os resultados em um único dashboard, fornecendo métricas e playbooks de automação.
 
-
 ## 2. Arquitetura
 
 O GCV utiliza uma arquitetura de microsserviços lógicos dentro de um monorepo, containerizada com Docker.
@@ -24,7 +23,6 @@ O GCV possui um wizard de instalação web para a configuração inicial.
     -   Git
 
 2.  **Clone o Repositório**
-
     ```bash
     git clone <URL_DO_REPOSITORIO>
     cd gcv
@@ -32,7 +30,6 @@ O GCV possui um wizard de instalação web para a configuração inicial.
 
 3.  **Inicie os Serviços**
     O script `setup.sh` irá construir e iniciar todos os contêineres Docker.
-
     ```bash
     chmod +x setup.sh
     ./setup.sh
@@ -61,14 +58,12 @@ Para habilitar funcionalidades que dependem de serviços externos, você precisa
 ## 5. Executando os Testes
 
 ### Testes do Backend
-
 ```bash
 cd gcv/backend
 pytest
 ```
 
 ### Testes do Frontend
-
 ```bash
 cd gcv/frontend
 npm test

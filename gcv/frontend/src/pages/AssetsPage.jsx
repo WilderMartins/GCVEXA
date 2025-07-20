@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
@@ -7,6 +6,7 @@ import useFetchData from '../hooks/useFetchData';
 const AssetsPage = () => {
   const { data: assets, loading, error, refetch } = useFetchData('/assets/');
   const [showForm, setShowForm] = useState(false);
+
   const handleCreate = async (assetData) => {
     try {
       await api.post('/assets/', assetData);
@@ -20,6 +20,7 @@ const AssetsPage = () => {
 
   if (loading) return <p>Loading assets...</p>;
   if (error) return <p style={{color: 'red'}}>Failed to load assets.</p>;
+
   return (
     <div>
       <h1>My Assets</h1>
@@ -88,4 +89,6 @@ const NewAssetForm = ({ onSubmit }) => {
     </form>
   );
 };
+
+
 export default AssetsPage;

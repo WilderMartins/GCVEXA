@@ -6,6 +6,7 @@ const VulnerabilityRow = ({ occurrence, onStatusChange, playbooks }) => {
   const [summary, setSummary] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(occurrence.status);
+
   const handleSummarize = async () => {
     setIsLoading(true);
     try {
@@ -77,6 +78,7 @@ const VulnerabilityRow = ({ occurrence, onStatusChange, playbooks }) => {
     </>
   );
 };
+
 
 const ScanDetailPage = () => {
   const { scanId } = useParams();
