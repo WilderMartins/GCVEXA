@@ -1,0 +1,46 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: gcv_db_prod
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./gcv/backend
+      dockerfile: Dockerfile
+    container_name: gcv_backend_prod
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      - SECRET_KEY=${SECRET_KEY}
+      # Adicionar outras variáveis de ambiente de produção aqui
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./gcv/frontend
+      dockerfile: Dockerfile.prod
+    container_name: gcv_frontend_prod
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Os serviços de ZAP e SonarQube podem ser adicionados aqui se forem usados em produção.
+  # Recomenda-se que eles rodem em máquinas separadas para melhor performance.
+
+volumes:
+  postgres_data_prod:
