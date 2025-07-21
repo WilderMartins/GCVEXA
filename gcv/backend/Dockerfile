@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.10-slim-buster
 
 # WORKDIR define o diretório de execução E o adiciona ao PYTHONPATH
 WORKDIR /app
