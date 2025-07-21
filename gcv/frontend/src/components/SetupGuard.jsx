@@ -29,3 +29,4 @@ const SetupGuard = () => {
 
   return <Outlet />;
 };
+export default SetupGuard;
