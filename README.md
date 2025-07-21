@@ -1,5 +1,4 @@
 # GCV - Sistema de Gestão de Vulnerabilidades
-# by Martins @ 2025
 
 ## 1. Visão Geral (Objective)
 
