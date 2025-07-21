@@ -13,6 +13,7 @@ def get_setup_status(db: Session = Depends(deps.get_db)):
     Returns true if no users exist in the database.
     """
     user_count = crud.user.get_all_users_count(db)
+    print(f"DEBUG: Found {user_count} users in the database. needs_setup will be {user_count == 0}.")
     return {"needs_setup": user_count == 0}
 
 @router.post("/initialize")

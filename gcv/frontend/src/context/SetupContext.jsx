@@ -11,13 +11,16 @@ export const SetupProvider = ({ children }) => {
 
   useEffect(() => {
     const checkSetupStatus = async () => {
+      alert("DEBUG: Frontend is checking setup status...");
       try {
         const { data } = await api.get('/setup/status');
+        alert(`DEBUG: Success from backend. needs_setup = ${data.needs_setup}`);
         setSetupState({ needsSetup: data.needs_setup, error: null });
       } catch (error) {
+        alert("DEBUG: Error connecting to backend. The API call failed.");
         console.error("Could not verify setup status.", error);
         setSetupState({
-          needsSetup: false, // Previne loop de redirecionamento, mas o erro será mostrado
+          needsSetup: false,
           error: "Could not connect to the backend. Please ensure all Docker containers are running correctly and try again."
         });
       }
