@@ -6,6 +6,7 @@ import SetupGuard from './components/SetupGuard';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import MainLayout from './components/layout/MainLayout';
+import ImportScanPage from './pages/ImportScanPage';
 
 // Páginas Públicas e de Setup
 import LoginPage from './pages/LoginPage';
@@ -58,6 +59,7 @@ function App() {
                 <Route path="/settings/customization" element={<CustomizationPage />} />
                 <Route path="/playbooks" element={<PlaybooksPage />} />
                 <Route path="/reporting" element={<ReportsPage />} />
+                <Route path="/import-scan" element={<ImportScanPage />} />
               </Route>
             </Route>
           </Route>
