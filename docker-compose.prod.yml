@@ -35,5 +35,45 @@ services:
       - backend
     restart: unless-stopped
 
+  zap:
+    image: softwaresecurityproject/zap-stable
+    container_name: gcv_zap_prod
+    command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.key=gcv_zap_api_key -config api.disablekey=false
+    restart: unless-stopped
+
+  postgres_sonar:
+    image: postgres:11-alpine
+    container_name: gcv_postgres_sonar_prod
+    volumes:
+      - sonarqube_db_prod:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonarqube
+    restart: unless-stopped
+
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: gcv_sonarqube_prod
+    ports:
+      - "9000:9000"
+    environment:
+      - sonar.jdbc.username=sonar
+      - sonar.jdbc.password=sonar
+      - sonar.jdbc.url=jdbc:postgresql://postgres_sonar:5432/sonarqube
+    volumes:
+      - sonarqube_conf_prod:/opt/sonarqube/conf
+      - sonarqube_data_prod:/opt/sonarqube/data
+      - sonarqube_extensions_prod:/opt/sonarqube/extensions
+      - sonarqube_logs_prod:/opt/sonarqube/logs
+    depends_on:
+      - postgres_sonar
+    restart: unless-stopped
+
 volumes:
   postgres_data_prod:
+  sonarqube_db_prod:
+  sonarqube_conf_prod:
+  sonarqube_data_prod:
+  sonarqube_extensions_prod:
+  sonarqube_logs_prod:

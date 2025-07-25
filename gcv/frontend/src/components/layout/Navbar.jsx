@@ -41,9 +41,6 @@ const Navbar = () => {
       {isAdmin && (
         <Link to="/reporting" style={{ marginRight: '1rem' }}>Reporting</Link>
       )}
-      {isAdmin && (
-        <Link to="/import-scan" style={{ marginRight: '1rem' }}>Importar Scan</Link>
-      )}
 
       <div style={{ marginLeft: 'auto' }}>
         <Link to="/account/security" style={{ marginRight: '1rem' }}>
