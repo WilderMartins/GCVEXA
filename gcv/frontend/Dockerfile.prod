@@ -1,32 +1,30 @@
-# --- Estágio 1: Build ---
-# Usa uma imagem Node.js para construir a aplicação React
-
-FROM node:20-alpine as build
+# Estágio 1: Build da aplicação React
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Copia os arquivos de manifesto e instala as dependências
+# Copiar package.json e package-lock.json
 COPY package*.json ./
+
+# Instalar as dependências
 RUN npm install
 
-# Copia o resto do código da aplicação
+# Copiar o restante dos arquivos da aplicação
 COPY . .
 
-# Constrói a aplicação para produção
+# Construir a aplicação para produção
 RUN npm run build
 
-# --- Estágio 2: Serve ---
-# Usa uma imagem Nginx leve para servir os arquivos estáticos
-
+# Estágio 2: Servir a aplicação com Nginx
 FROM nginx:1.25-alpine
 
-# Copia os arquivos estáticos construídos do estágio anterior
+# Copiar os arquivos estáticos construídos do estágio anterior
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copia a configuração personalizada do Nginx
+# Copiar a configuração personalizada do Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expõe a porta 80
+# Expor a porta 80
 EXPOSE 80
 
 # Comando para iniciar o Nginx
