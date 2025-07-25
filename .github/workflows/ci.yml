@@ -26,11 +26,5 @@ jobs:
     - name: Verificar se os containers estão em execução
       run: docker-compose -f docker-compose.prod.yml ps
 
-    - name: Executar testes de fumaça
-      run: |
-        # Aguardar a aplicação iniciar
-        sleep 30
-        # Testar a resposta do frontend
-        curl -f http://localhost
-        # Testar a resposta do backend
-        curl -f http://localhost/api/v1/login/test
+    - name: Executar testes de unidade
+      run: docker-compose -f docker-compose.prod.yml exec -T backend pytest

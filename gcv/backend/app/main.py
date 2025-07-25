@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from .db.session import engine, SessionLocal
 from .db.base_class import Base
-from .api.v1.endpoints import login, scanner_configs, scans, dashboard, mfa, customization, vulnerability_definitions, setup, playbooks, reporting, assets
+from .api.v1.endpoints import login, scanner_configs, scans, dashboard, mfa, customization, vulnerability_definitions, setup, playbooks, reporting, assets, collectors
 from . import crud
 from .core.scheduler import start_scheduler, shutdown_scheduler
 
@@ -37,6 +37,7 @@ app.include_router(setup.router, prefix="/api/v1/setup", tags=["Setup"])
 app.include_router(playbooks.router, prefix="/api/v1/playbooks", tags=["Playbooks"])
 app.include_router(reporting.router, prefix="/api/v1/reporting", tags=["Reporting"])
 app.include_router(assets.router, prefix="/api/v1/assets", tags=["Assets"])
+app.include_router(collectors.router, prefix="/api/v1/collectors", tags=["Collectors"])
 
 @app.get("/")
 def read_root():
