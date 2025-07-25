@@ -37,3 +37,8 @@ services:
 
 volumes:
   postgres_data_prod:
+  sonarqube_db_prod:
+  sonarqube_conf_prod:
+  sonarqube_data_prod:
+  sonarqube_extensions_prod:
+  sonarqube_logs_prod:
