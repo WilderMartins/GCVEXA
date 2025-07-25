@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3.8'
 
 services:
   db:
@@ -7,9 +7,9 @@ services:
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=gcv_user
+      - POSTGRES_PASSWORD=gcv_password
+      - POSTGRES_DB=gcv_db
     restart: unless-stopped
 
   backend:
@@ -17,13 +17,9 @@ services:
       context: ./gcv/backend
       dockerfile: Dockerfile
     container_name: gcv_backend_prod
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
-    ports:
-      - "8000:8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
-      - SECRET_KEY=${SECRET_KEY}
-      # Adicionar outras variáveis de ambiente de produção aqui
+      - DATABASE_URL=postgresql://gcv_user:gcv_password@db/gcv_db
     depends_on:
       - db
     restart: unless-stopped
@@ -38,9 +34,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-
-  # Os serviços de ZAP e SonarQube podem ser adicionados aqui se forem usados em produção.
-  # Recomenda-se que eles rodem em máquinas separadas para melhor performance.
 
 volumes:
   postgres_data_prod:
