@@ -1,18 +1,30 @@
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from .config import settings
+from apscheduler.schedulers.background import BackgroundScheduler
+from app import crud
+from app.db.session import SessionLocal
+from app.collectors import file_collector
 
-jobstores = {
-    'default': SQLAlchemyJobStore(url=settings.DATABASE_URL)
-}
-scheduler = AsyncIOScheduler(jobstores=jobstores)
+scheduler = BackgroundScheduler()
+
+def run_collectors():
+    """
+    Run all configured collectors.
+    """
+    db = SessionLocal()
+    collectors = crud.collector.get_multi(db)
+    for collector in collectors:
+        if collector.collector_type == "file":
+            file_collector.run(collector.config)
+    db.close()
 
 def start_scheduler():
-    if not scheduler.running:
-        scheduler.start()
-        print("Scheduler started.")
+    """
+    Start the scheduler.
+    """
+    scheduler.add_job(run_collectors, "interval", minutes=60)
+    scheduler.start()
 
 def shutdown_scheduler():
-    if scheduler.running:
-        scheduler.shutdown()
-        print("Scheduler shut down.")
+    """
+    Shutdown the scheduler.
+    """
+    scheduler.shutdown()

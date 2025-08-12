@@ -1,70 +1,68 @@
-# GCV - Sistema de Gestão de Vulnerabilidades
+# GCVEXA - Gestão Centralizada de Vulnerabilidades
 
-## 1. Visão Geral (Objective)
+O GCVEXA é uma plataforma de código aberto para a gestão centralizada de vulnerabilidades de segurança. Ele permite que você importe os resultados de escaneamentos de diversas ferramentas de segurança, centralize as informações em um único local e gerencie o ciclo de vida das vulnerabilidades.
 
-O **Sistema de Gestão de Vulnerabilidades (GCV)** é uma plataforma SaaS projetada para agregar, orquestrar e remediar vulnerabilidades de segurança de forma centralizada e inteligente. O sistema se integra a uma variedade de scanners de segurança (Infraestrutura, DAST, SAST) para consolidar os resultados em um único dashboard, fornecendo métricas e playbooks de automação.
+## Funcionalidades
 
-## 2. Arquitetura
+- **Centralização de Vulnerabilidades**: Importe os resultados de escaneamentos de ferramentas como o BurpSuite, Greenbone, SonarQube, etc.
+- **Gestão do Ciclo de Vida**: Acompanhe o status de cada vulnerabilidade, desde a sua descoberta até a sua correção.
+- **Visualização de Dados**: Visualize as informações de vulnerabilidades em dashboards e relatórios.
+- **API para Integração**: Integre o GCVEXA com outras ferramentas e sistemas através da sua API RESTful.
 
-O GCV utiliza uma arquitetura de microsserviços lógicos dentro de um monorepo, containerizada com Docker.
+## Arquitetura
 
--   **Backend:** API em **Python/FastAPI**.
--   **Frontend:** SPA em **React/Vite**.
--   **Banco de Dados:** **PostgreSQL** para o GCV e para o SonarQube.
--   **Containerização:** Todos os serviços (backend, frontend, bancos de dados, ZAP, SonarQube) são definidos no `docker-compose.yml`.
+O GCVEXA é composto por dois componentes principais:
 
-## 3. Guia de Instalação Rápida (Wizard)
+- **Backend**: Uma API RESTful desenvolvida em Python com o framework FastAPI.
+- **Frontend**: Uma aplicação web desenvolvida em JavaScript com a biblioteca React.
 
-O GCV possui um wizard de instalação web para a configuração inicial.
+## Como Começar
 
-1.  **Pré-requisitos:**
-    -   Docker
-    -   Docker Compose
-    -   Git
+Para começar a usar o GCVEXA, siga os seguintes passos:
 
-2.  **Clone o Repositório**
+1.  **Clone o repositório**:
+
     ```bash
-    git clone <URL_DO_REPOSITORIO>
-    cd gcv
+    git clone https://github.com/seu-usuario/gcvexa.git
     ```
 
-3.  **Inicie os Serviços**
-    O script `setup.sh` irá construir e iniciar todos os contêineres Docker.
+2.  **Inicie o ambiente de desenvolvimento**:
+
     ```bash
-    chmod +x setup.sh
+    cd gcvexa
     ./setup.sh
     ```
-    *Aguarde alguns minutos, pois o SonarQube pode demorar para iniciar.*
 
-4.  **Acesse o Wizard de Instalação**
-    Abra seu navegador e acesse: `http://localhost:5173`
+3.  **Acesse a aplicação**:
 
-    Você será automaticamente redirecionado para o wizard de instalação, onde criará a conta de Administrador.
+    - Frontend: `http://localhost:5173`
+    - Backend API: `http://localhost:8000`
+    - Documentação da API: `http://localhost:8000/docs`
 
-5.  **Login**
-    Após completar o wizard, você será redirecionado para a página de login. Use as credenciais que acabou de criar.
+## Como Importar Vulnerabilidades
 
-## 4. Configuração Avançada (Opcional)
+Para importar as vulnerabilidades de uma ferramenta de escaneamento, você pode usar o seguinte endpoint da API:
 
-Para habilitar funcionalidades que dependem de serviços externos, você precisará configurar as variáveis de ambiente.
+`POST /api/v1/scans/import`
 
-1.  Crie um arquivo `.env` no diretório `gcv/backend/app/` (você pode copiar o `.env.example`).
-2.  Edite o arquivo e adicione as seguintes chaves:
+**Exemplo de Payload**:
 
-    -   **`GEMINI_API_KEY`**: Necessária para a funcionalidade "Resumir com IA".
-    -   **`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`**: Necessárias para o Login Social com Google.
-    -   **Configurações de SMTP**: Necessárias para o envio de notificações por e-mail.
-
-## 5. Executando os Testes
-
-### Testes do Backend
-```bash
-cd gcv/backend
-pytest
+```json
+{
+  "name": "Escaneamento do BurpSuite",
+  "asset_id": 1,
+  "vulnerabilities": [
+    {
+      "name": "SQL Injection",
+      "description": "A aplicação está vulnerável a ataques de SQL Injection.",
+      "severity": "Alta",
+      "remediation": "Use prepared statements para evitar a concatenação de strings na construção de queries SQL.",
+      "status": "Aberta"
+    }
+  ]
+}
 ```
 
-### Testes do Frontend
-```bash
-cd gcv/frontend
-npm test
-```
+## Contribuição
+
+Contribuições são bem-vindas! Se você deseja contribuir com o projeto, por favor, abra uma issue ou envie um pull request.
