@@ -14,7 +14,7 @@ vi.mock('../services/api', () => ({
 }));
 
 describe('App Routing', () => {
-  it('renders login page for the root route when not authenticated', () => {
+  it('renders login page for the root route when not authenticated', async () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <CustomizationProvider>
@@ -26,6 +26,7 @@ describe('App Routing', () => {
     );
 
     // Como a rota '/' é protegida, o usuário é redirecionado para '/login'
-    expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument();
+    // Usamos findByRole para aguardar a renderização assíncrona
+    expect(await screen.findByRole('heading', { name: /login/i })).toBeInTheDocument();
   });
 });

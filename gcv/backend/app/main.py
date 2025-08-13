@@ -42,3 +42,7 @@ app.include_router(collectors.router, prefix="/api/v1/collectors", tags=["Collec
 @app.get("/")
 def read_root():
     return {"message": "Bem-vindo ao GCV API"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}

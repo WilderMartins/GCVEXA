@@ -7,9 +7,19 @@ services:
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_USER=gcv_user
-      - POSTGRES_PASSWORD=gcv_password
-      - POSTGRES_DB=gcv_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
   backend:
@@ -17,11 +27,21 @@ services:
       context: ./gcv/backend
       dockerfile: Dockerfile
     container_name: gcv_backend_prod
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
     environment:
-      - DATABASE_URL=postgresql://gcv_user:gcv_password@db/gcv_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
   frontend:
@@ -32,13 +52,24 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
   zap:
     image: softwaresecurityproject/zap-stable
     container_name: gcv_zap_prod
-    command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.key=gcv_zap_api_key -config api.disablekey=false
+    command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.key=${ZAP_API_KEY} -config api.disablekey=false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
   postgres_sonar:
@@ -47,9 +78,19 @@ services:
     volumes:
       - sonarqube_db_prod:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=sonar
-      - POSTGRES_PASSWORD=sonar
-      - POSTGRES_DB=sonarqube
+      - POSTGRES_USER=${SONAR_DB_USER}
+      - POSTGRES_PASSWORD=${SONAR_DB_PASSWORD}
+      - POSTGRES_DB=${SONAR_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SONAR_DB_USER} -d ${SONAR_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
   sonarqube:
@@ -58,16 +99,22 @@ services:
     ports:
       - "9000:9000"
     environment:
-      - sonar.jdbc.username=sonar
-      - sonar.jdbc.password=sonar
-      - sonar.jdbc.url=jdbc:postgresql://postgres_sonar:5432/sonarqube
+      - sonar.jdbc.username=${SONAR_DB_USER}
+      - sonar.jdbc.password=${SONAR_DB_PASSWORD}
+      - sonar.jdbc.url=jdbc:postgresql://postgres_sonar:5432/${SONAR_DB_NAME}
     volumes:
       - sonarqube_conf_prod:/opt/sonarqube/conf
       - sonarqube_data_prod:/opt/sonarqube/data
       - sonarqube_extensions_prod:/opt/sonarqube/extensions
       - sonarqube_logs_prod:/opt/sonarqube/logs
     depends_on:
-      - postgres_sonar
+      postgres_sonar:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
 volumes:
