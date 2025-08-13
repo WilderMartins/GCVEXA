@@ -39,6 +39,33 @@ Para começar a usar o GCVEXA, siga os seguintes passos:
     - Backend API: `http://localhost:8000`
     - Documentação da API: `http://localhost:8000/docs`
 
+## Ambiente de Produção
+
+Para iniciar o ambiente de produção, siga estes passos:
+
+1.  **Crie o arquivo de variáveis de ambiente**:
+
+    Copie o arquivo de exemplo `.env.prod.example` para `.env.prod` e preencha as variáveis com seus próprios valores. Este arquivo contém as senhas e chaves de API necessárias para os serviços de produção.
+
+    ```bash
+    cp .env.prod.example .env.prod
+    # Agora, edite o arquivo .env.prod com seus valores
+    ```
+
+2.  **Inicie o ambiente de produção**:
+
+    Use o script `setup.sh` com o argumento `prod` para construir e iniciar os contêineres de produção.
+
+    ```bash
+    ./setup.sh prod
+    ```
+
+3.  **Acesse os serviços**:
+
+    - **Aplicação GCVEXA**: `http://localhost`
+    - **SonarQube**: `http://localhost:9000` (use as credenciais do seu `.env.prod`)
+    - **OWASP ZAP**: `http://localhost:8080` (use a chave de API do seu `.env.prod`)
+
 ## Como Importar Vulnerabilidades
 
 Para importar as vulnerabilidades de uma ferramenta de escaneamento, você pode usar o seguinte endpoint da API:
