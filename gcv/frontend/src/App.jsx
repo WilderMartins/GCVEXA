@@ -31,42 +31,40 @@ import ReportsPage from './pages/ReportsPage';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* O SetupGuard envolve todas as rotas para a verificação inicial */}
-        <Route element={<SetupGuard />}>
+    <Routes>
+      {/* O SetupGuard envolve todas as rotas para a verificação inicial */}
+      <Route element={<SetupGuard />}>
 
-          {/* Rotas Públicas */}
-          <Route path="/setup" element={<SetupWizardPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/login/callback" element={<LoginCallbackPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
+        {/* Rotas Públicas */}
+        <Route path="/setup" element={<SetupWizardPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login/callback" element={<LoginCallbackPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
 
-          {/* Rotas Protegidas com o Layout Principal */}
-          <Route element={<MainLayout />}>
-            <Route element={<PrivateRoute />}>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/assets" element={<AssetsPage />} />
-              <Route path="/assets/:assetId" element={<AssetDetailPage />} />
-              <Route path="/scans" element={<ScansPage />} />
-              <Route path="/scans/:scanId" element={<ScanDetailPage />} />
-              <Route path="/vulnerabilities/definitions/:definitionId" element={<VulnerabilityDefinitionPage />} />
-              <Route path="/account/security" element={<AccountSecurityPage />} />
+        {/* Rotas Protegidas com o Layout Principal */}
+        <Route element={<MainLayout />}>
+          <Route element={<PrivateRoute />}>
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/assets" element={<AssetsPage />} />
+            <Route path="/assets/:assetId" element={<AssetDetailPage />} />
+            <Route path="/scans" element={<ScansPage />} />
+            <Route path="/scans/:scanId" element={<ScanDetailPage />} />
+            <Route path="/vulnerabilities/definitions/:definitionId" element={<VulnerabilityDefinitionPage />} />
+            <Route path="/account/security" element={<AccountSecurityPage />} />
 
-              {/* Rotas de Admin (também são privadas e usam o MainLayout) */}
-              <Route element={<AdminRoute />}>
-                <Route path="/settings/scanners" element={<ScannerConfigsPage />} />
-                <Route path="/settings/customization" element={<CustomizationPage />} />
-                <Route path="/playbooks" element={<PlaybooksPage />} />
-                <Route path="/reporting" element={<ReportsPage />} />
-                <Route path="/import-scan" element={<ImportScanPage />} />
-              </Route>
+            {/* Rotas de Admin (também são privadas e usam o MainLayout) */}
+            <Route element={<AdminRoute />}>
+              <Route path="/settings/scanners" element={<ScannerConfigsPage />} />
+              <Route path="/settings/customization" element={<CustomizationPage />} />
+              <Route path="/playbooks" element={<PlaybooksPage />} />
+              <Route path="/reporting" element={<ReportsPage />} />
+              <Route path="/import-scan" element={<ImportScanPage />} />
             </Route>
           </Route>
-
         </Route>
-      </Routes>
-    </Router>
+
+      </Route>
+    </Routes>
   );
 }
 
