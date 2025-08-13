@@ -16,10 +16,12 @@ check_docker() {
 # Determinar o ambiente
 ENV=$1
 COMPOSE_FILE="docker-compose.yml"
+ENV_FILE=""
 
 if [ "$ENV" == "prod" ]; then
     echo -e "${YELLOW}Executando em modo de PRODUÇÃO${NC}"
     COMPOSE_FILE="docker-compose.prod.yml"
+    ENV_FILE="--env-file .env.prod"
 elif [ "$ENV" == "dev" ] || [ -z "$ENV" ]; then
     echo -e "${YELLOW}Executando em modo de DESENVOLVIMENTO${NC}"
     ENV="dev" # Garante que a variável não esteja vazia
@@ -35,7 +37,7 @@ check_docker
 
 # 2. Construir as imagens Docker
 echo -e "${GREEN}Construindo as imagens Docker (isso pode levar alguns minutos)...${NC}"
-docker-compose -f ${COMPOSE_FILE} build
+docker-compose -f ${COMPOSE_FILE} ${ENV_FILE} build
 if [ $? -ne 0 ]; then
     echo "Erro: Falha ao construir as imagens Docker. Verifique os logs acima."
     exit 1
@@ -43,9 +45,9 @@ fi
 
 # 3. Iniciar os contêineres em modo detached
 echo -e "${GREEN}Iniciando os serviços com Docker Compose...${NC}"
-docker-compose -f ${COMPOSE_FILE} up -d
+docker-compose -f ${COMPOSE_FILE} ${ENV_FILE} up -d
 if [ $? -ne 0 ]; then
-    echo "Erro: Falha ao iniciar os contêineres. Verifique os logs com 'docker-compose -f ${COMPOSE_FILE} logs'."
+    echo "Erro: Falha ao iniciar os contêineres. Verifique os logs com 'docker-compose -f ${COMPOSE_FILE} ${ENV_FILE} logs'."
     exit 1
 fi
 

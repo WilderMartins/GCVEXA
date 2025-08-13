@@ -141,3 +141,9 @@ dmypy.json
 *.swp
 *.swo
 *~
+
+# Environment variables
+.env
+.env.*
+!.env.example
+!*.env.example

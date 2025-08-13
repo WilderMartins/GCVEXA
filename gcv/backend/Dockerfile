@@ -1,21 +1,41 @@
-# Usar uma imagem base do Python
-FROM python:3.10-slim-buster
+# Stage 1: Build the virtual environment
+FROM python:3.12-slim as builder
 
-# Definir o diretório de trabalho como /app
+# Install poetry
+RUN pip install poetry
+
+# Set poetry config
+ENV POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
+
+# Set working directory
 WORKDIR /app
 
-# Copiar o arquivo de dependências
-COPY ./app/requirements.txt /app/requirements.txt
+# Copy the dependency files
+COPY pyproject.toml poetry.lock ./
 
-# Instalar as dependências
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+# Install dependencies
+RUN poetry install --no-root --no-dev
 
-# Copiar todo o código da aplicação para o WORKDIR
+# Stage 2: Create the final image
+FROM python:3.12-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy the virtual environment from the builder
+COPY --from=builder /app/.venv ./.venv
+
+# Activate the virtual environment
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Copy the application code
 COPY ./app /app
 
-# Expor a porta 8000 para permitir a comunicação com o container
+# Expose the port
 EXPOSE 8000
 
-# Comando para iniciar a aplicação com uvicorn
-# Ele irá procurar por um objeto 'app' no módulo 'main.py'
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-w", "3", "-b", "0.0.0.0:8000", "main:app"]
