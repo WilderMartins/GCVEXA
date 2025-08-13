@@ -14,7 +14,7 @@ ENV POETRY_NO_INTERACTION=1 \
 WORKDIR /app
 
 # Copy the dependency files
-COPY pyproject.toml poetry.lock ./
+COPY ../../pyproject.toml ../../poetry.lock ./
 
 # Install dependencies
 RUN poetry install --no-root --no-dev
@@ -32,7 +32,7 @@ COPY --from=builder /app/.venv ./.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy the application code
-COPY ./app /app
+COPY gcv/backend/app /app
 
 # Expose the port
 EXPOSE 8000
