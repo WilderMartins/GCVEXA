@@ -24,8 +24,8 @@ services:
 
   backend:
     build:
-      context: ./gcv/backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: gcv/backend/Dockerfile
     container_name: gcv_backend_prod
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
